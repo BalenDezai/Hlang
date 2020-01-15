@@ -1,4 +1,5 @@
 ﻿using System;
+using HlangInterpreter.lib;
 
 namespace HlangInterpreter
 {
@@ -6,7 +7,13 @@ namespace HlangInterpreter
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var str = "erwerdfdsf 1444";
+            var s = new Scanner(str);
+            while (!s.IsEof())
+            {
+                Console.WriteLine(s.PeekCurrentChar());
+                s.NextChar();
+            }
         }
     }
 }
