@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using HlangInterpreter.lib;
 
 namespace HlangInterpreter
@@ -7,12 +9,14 @@ namespace HlangInterpreter
     {
         static void Main(string[] args)
         {
-            var str = "erwerdfdsf 1444";
-            var s = new Scanner(str);
-            while (!s.IsEof())
+            var str = "sum is fn(x,y) { x add y; } print(sum(5, 6));";
+
+            var str2 = "sum is fn(x, y) { x add y; } sumOfAddition is sum(5, 6); if sumOfAddition is greater than 12 print(sumOfAddition);";
+            var tokenizer = new Tokenizer(new Scanner(str));
+            while (!tokenizer.IsEof())
             {
-                Console.WriteLine(s.PeekCurrentChar());
-                s.NextChar();
+                Console.WriteLine(tokenizer.PeekToken());
+                tokenizer.NextToken();
             }
         }
     }
