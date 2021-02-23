@@ -1,24 +1,35 @@
-expr = while | if | assignment | function ;
+program:= <declaration>*;
+
+<declaration> := <variableDeclaration> | <statement>;
+<variableDeclaration> := <assignment>;
+<statement> := <expression> | <block>;
+<block> := <tab> <declaration>;
+<expression> := <assignment>;
+<assignment> := <identifer> 'is' <assignment> | <equality>;
+<equality> := <comparison> (<equalityOperators> comparison)*;
+<comparison> := <term> ( <comparisonOperators> <term> )*;
+<term> := <factor> ( <termOperators> <factor> )* ;
+<factor> := <unary> ( <factorizationOperators> <unary> )*;
+<unary> := ( 'not' | 'reverse' )+ <unary> | <primary>;
+<primary> :=  <object> | "true" | "false" | "nothing" | '(' <expression> ')' | <identifer> ;
 
 
-assignment = identifer , 'is' , ( letter , { letter | digit } ) | identifer  ';' ;
+<identifier> := '_'? <letter> ( <letter> | <digit>  )* ;
+<object> := <number> | <string>;
+<number> :=  '-'? <digit>+ ('.' <digit>+)*;
+<string> := '"' <letter>+ '"' ;
 
-if = 'if' , '(' , { condition } , ')' , '{' , { expr } , '}' [ ( 'else' , '{' , expr , '}' ) ] , ';' ;
-while = 'while' , '(' , { condition } , ')' , '{' , { expr } , '}' , ';' ;
-function = 'function' , '(' , { [ identifer | { identifer } ] } , ')' , '{' , expr , '}' , ';' ;
-condition = ( identifer | number | string ) , operator , ( identifer | number | string )
-
-identifier = letter , { letter | digit | '_'} ;
-number =  [ '-' ] { digit } | { digit } '.' { digit } | { digit } '+' { digit } | { digit } '*' { digit } | { digit } '/' { digit } '-' { digit } ;
-string = '"' , { letter - '"' } , '"'
-
-operator = 'is equal' | 'is greater than' | 'is less than'´| 'add' | 'subtract' | 'divide by' | 'multiply by' ;
-letter = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'
-       | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N'
-       | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U'
-       | 'V' | 'W' | 'X' | 'Y' | 'Z' | 'a' | 'b'
-       | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i'
-       | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p'
-       | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w'
-       | 'x' | 'y' | 'z' ;
-digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ;
+<equalityOperators> := 'is equal to' | 'is not' ;
+<comparisonOperators> := 'is greater than' | 'is less than'´| 'is equal or greater than' | 'is equal or less than';
+<termOperators> := 'add' | 'plus' | 'subtract' | 'minus';
+<factorizationOperators> := 'divide by' | 'multiply by';
+<letter> := 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' 
+        | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N' 
+        | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' 
+        | 'V' | 'W' | 'X' | 'Y' | 'Z' | 'a' | 'b'
+        | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i'
+        | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p'
+        | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w'
+        | 'x' | 'y' | 'z' ;
+<digit> := '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ;
+<tab> := '    ';

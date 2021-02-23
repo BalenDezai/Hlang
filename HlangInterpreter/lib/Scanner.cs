@@ -5,13 +5,15 @@
     /// </summary>
     public class Scanner
     {
-        private readonly string _codeStr;
-        private int _position;
+        public int Start { get; set; }
+        public string CodeStr { get; set; }
+        public int Position { get; set; }
+        public int Line { get; set; }
 
         public Scanner(string codeStr)
         {
-            this._codeStr = codeStr + char.MinValue;
-            this._position = 0;
+            CodeStr = codeStr;
+            Position = 0;
         }
 
         /// <summary>
@@ -20,7 +22,8 @@
         /// <returns>current character</returns>
         public char MoveToNextChar()
         {
-            return this._codeStr[this._position++];
+            Position++;
+            return CodeStr[Position- 1];
         }
 
         /// <summary>
@@ -29,8 +32,14 @@
         /// <returns>current character</returns>
         public char PeekCurrentChar()
         {
-            var ch = this._codeStr[this._position];
-            return ch;
+            if (IsEof()) return '\0';
+            return CodeStr[Position];
+        }
+
+        public char PeekNextChar()
+        {
+            if (Position+ 1 >= CodeStr.Length) return '\0';
+            return CodeStr[Position + 1];
         }
 
         /// <summary>
@@ -39,11 +48,20 @@
         /// <returns>boolean value indicating if at end of line or not</returns>
         public bool IsEof()
         {
-            var ch = this.PeekCurrentChar();
-            if (ch.Equals(char.MinValue)) return true;
-            return false;
+            return Position >= CodeStr.Length;
         }
 
+        public bool Match(char expected)
+        {
+            if (IsEof()) return false;
+            if (CodeStr[Position] != expected) return false;
+            Position++;
+            return true;
+        }
 
+        public string GetStartToCurrent()
+        {
+            return CodeStr.Substring(Start, (Position - Start));
+        }
     }
 }

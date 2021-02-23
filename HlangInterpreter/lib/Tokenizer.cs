@@ -1,7 +1,7 @@
-﻿using HlangInterpreter.objects;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using HlangInterpreter.TokenEnums;
 
 namespace HlangInterpreter.lib
 {
@@ -10,82 +10,95 @@ namespace HlangInterpreter.lib
     /// </summary>
     public class Tokenizer
     {
+
+        public List<Token> Tokens { get; set; } = new List<Token>();
+
         private readonly Scanner _scanner;
-        private readonly string _idStr;
-        private readonly string _puncStr;
-        private readonly string _whitespaceStr;
-        private readonly string[] _keywords;
-        private readonly Dictionary<string, string> _operationDictionary;
-        private Token _currentToken;
+        private readonly Dictionary<string, TokenType> _keywords;
 
         public Tokenizer(Scanner scanner)
         {
             this._scanner = scanner;
-            this._idStr = "?!-<>=0123456789";
-            this._puncStr = ",;(){}[]";
-            this._whitespaceStr = "\n\t";
-            this._keywords = new string[] { "fn", "if", "else",};
-            this._operationDictionary = new Dictionary<string, string>()
+            this._keywords = new Dictionary<string, TokenType>()
             {
-                {"equals", "=="},
-                {"is", "="},
-                {"not", "!"},
-                {"divide", "/"},
-                {"multiply", "*"},
-                {"add", "+"},
-                {"subtract", "-"},
-                {"modulus", "%"},
-                {"greater", ">"},
-                {"less", "<"}
-
+                {"and", TokenType.AND },
+                {"else", TokenType.ELSE },
+                {"false", TokenType.FALSE},
+                {"true", TokenType.TRUE},
+                {"function", TokenType.FUNCTION },
+                {"for", TokenType.FOR },
+                {"each", TokenType.EACH},
+                {"if", TokenType.IF },
+                {"nothing", TokenType.NOTHING},
+                {"while", TokenType.WHILE },
+                {"print", TokenType.PRINT},
+                {"return", TokenType.RETURN},
+                {"equal", TokenType.EQUAL},
+                {"is", TokenType.IS},
+                {"not", TokenType.NOT},
+                {"by", TokenType.BY },
+                {"divide", TokenType.DIVIDE},
+                {"multiply", TokenType.MULTIPLY},
+                {"add", TokenType.ADD},
+                {"subtract", TokenType.SUBTRACT},
+                {"plus", TokenType.SUBTRACT},
+                {"minus", TokenType.SUBTRACT},
+                {"modulus", TokenType.MODULUS},
+                {"greater", TokenType.GREATER},
+                {"less", TokenType.LESS},
+                {"than", TokenType.THAN },
+                {"then", TokenType.THEN },
+                {"or", TokenType.OR },
+                {"define", TokenType.DEFINE },
+                {"to", TokenType.TO }
             };
-            this._currentToken = null;
+
         }
 
-        /// <summary>
-        /// create a specific topic based on the current character
-        /// </summary>
-        /// <returns></returns>
-        private Token ReadNextToken()
+        public List<Token> GetTokens()
+        {
+            while (!_scanner.IsEof())
+            {
+                _scanner.Start = _scanner.Position;
+                ReadNextToken();
+            }
+
+            Tokens.Add(new Token(TokenType.EOF, "", null, _scanner.Line));
+            return Tokens;
+        }
+
+        private void ReadNextToken()
         {
             //  TODO: handle if its whitespace start
-            
-            if (this._scanner.IsEof()) return null;
-            var ch = this._scanner.PeekCurrentChar();
-
-            if (ch == '/')
+            char c = _scanner.MoveToNextChar();
+            switch (c)
             {
-                this.SkipComment();
-                return this.ReadNextToken();
+                case '\t': AddToken(TokenType.NEW_ENVIRONMENT); break;
+                case ' ':
+                    if (_scanner.Match(' '))
+                    {
+                        AddToken(TokenType.NEW_ENVIRONMENT);
+                    }
+                    break;
+                case '(': AddToken(TokenType.LEFT_PAREN); break;
+                case ')': AddToken(TokenType.RIGHT_PAREN); break;
+                case '/': SkipComment(); break;
+                case '\n': _scanner.Line++; break;
+                case '"': ReadString(); break;
+                default:
+                    if (IsDigit(c))
+                    {
+                        ReadNumber();
+                    } else if (IsAlphabet(c))
+                    {
+                       ReadWholeWord();
+                    }
+                    else
+                    {
+                        // throw error he re
+                    }
+                    break;
             }
-
-            if (ch == '"')
-            {
-                return this.ReadString(ch);
-            }
-
-            if (this.IsDigit(ch))
-            {
-                return this.ReadNumber(ch);
-            }
-
-            if (this.IsId(ch))
-            {
-                return this.ReadTxt(ch);
-            }
-
-            if (this.IsPunc(ch))
-            {
-                return new Token("Punc", this._scanner.MoveToNextChar());
-            }
-
-            if (char.IsWhiteSpace(ch))
-            {
-                this._scanner.MoveToNextChar();
-                return ReadNextToken();
-            }
-
-            throw new Exception("Error in read next char");
         }
 
         /// <summary>
@@ -93,99 +106,64 @@ namespace HlangInterpreter.lib
         /// </summary>
         private void SkipComment()
         {
-            this.ReadWhile((ch) => ch != '\n');
-            this._scanner.MoveToNextChar();
-        }
-
-        /// <summary>
-        /// reads a string of digits,
-        /// </summary>
-        /// <param name="ch"></param>
-        /// <returns>token with the digits parsed</returns>
-        private Token ReadNumber(char ch)
-        {
-            var isFloat = false;
-            var numberStr = ReadWhile((chToCheck) =>
+            if (_scanner.Match('/'))
             {
-                if (chToCheck == '.')
+                while (_scanner.PeekCurrentChar() != '\n' && !_scanner.IsEof()) _scanner.MoveToNextChar();
+            }
+            else if (_scanner.Match('*'))
+            {
+                while (true)
                 {
-                    if (isFloat) return false;
-                    isFloat = true;
-                    return true;
+                    if (_scanner.Match('*') && _scanner.Match('/'))
+                    {
+                        break;
+                    }
+                    _scanner.MoveToNextChar();
                 }
-                return this.IsDigit(chToCheck);
-            });
-
-            if (isFloat)
-            {
-                return new Token("Float", float.Parse(numberStr));
-            } else
-            {
-                return new Token("Integer", int.Parse(numberStr));
             }
         }
 
-        /// <summary>
-        /// reads string in quotation marks
-        /// </summary>
-        /// <param name="ch"></param>
-        /// <returns>token with a string value</returns>
-        private Token ReadString(char ch)
-        {
-            return new Token("String", this.ReadRestOfString());
-        }
 
-        /// <summary>
-        /// reads characters based on a predicate
-        /// </summary>
-        /// <param name="predicate"></param>
-        /// <returns>value read as a string</returns>
-        private string ReadWhile(Func<char, bool> predicate)
+        private void ReadNumber()
         {
-            var strBuilder = new StringBuilder();
+            while (IsDigit(_scanner.PeekCurrentChar())) _scanner.MoveToNextChar();
 
-            while (!this._scanner.IsEof() && predicate(this._scanner.PeekCurrentChar()))
+            if (_scanner.PeekCurrentChar() == '.' && IsDigit(_scanner.PeekNextChar()))
             {
-                strBuilder.Append(this._scanner.MoveToNextChar());
+                _scanner.MoveToNextChar();
+                while (IsDigit(_scanner.PeekCurrentChar())) _scanner.MoveToNextChar();
             }
 
-            return strBuilder.ToString();
+            AddToken(TokenType.NUMBER, double.Parse(_scanner.GetStartToCurrent()));
         }
 
-        /// <summary>
-        /// reads a sequence of string.
-        /// will read even if escaped
-        /// </summary>
-        /// <returns>string sequence</returns>
-        private string ReadRestOfString()
-        {
-            bool escaped = false;
-            var strBuilder = new StringBuilder();
-            this._scanner.MoveToNextChar();
 
-            while (!this._scanner.IsEof())
+        private void ReadString()
+        {
+            while(_scanner.PeekCurrentChar() != '"' && !_scanner.IsEof())
             {
-                var ch = this._scanner.MoveToNextChar();
-                if (escaped)
-                {
-                    strBuilder.Append(ch);
-                    escaped = false;
-                }
-                else if (ch == '\\')
-                {
-                    escaped = true;
-                }
-                else if (ch == '"')
-                {
-                    break;
-                }
-                else
-                {
-                    strBuilder.Append(ch);
-                }
+                if (_scanner.PeekCurrentChar() == '\n') _scanner.Line++;
+                _scanner.MoveToNextChar();
+            }
+            if (_scanner.IsEof())
+            {
+                //throw error
+                return;
             }
 
-            return strBuilder.ToString();
+            _scanner.MoveToNextChar();
+            string str = _scanner.CodeStr.Substring(_scanner.Start + 1, (_scanner.Position - _scanner.Start) - 2);
+            AddToken(TokenType.STRING, str);
+            
+        }
+
+        private void ReadWholeWord()
+        {
+            while (char.IsLetter(_scanner.PeekCurrentChar()) && !_scanner.IsEof()) _scanner.MoveToNextChar();
+            var value = _scanner.GetStartToCurrent();
+            TokenType type;
+            if (!_keywords.TryGetValue(value, out type)) type = TokenType.IDENTIFER;
+            AddToken(type);
         }
 
         private bool IsDigit(char ch)
@@ -193,94 +171,21 @@ namespace HlangInterpreter.lib
             return char.IsDigit(ch);
         }
 
-        private bool IsIdStart(char ch)
+        private bool IsAlphabet(char c)
         {
-            return char.IsLetter(ch) || ch == '_';
+            return char.IsLetter(c);
         }
 
-        private bool IsId(char ch)
+        private void AddToken(TokenType type)
         {
-            if (IsIdStart(ch)) return true;
-            for (int i = 0; i < _idStr.Length; i++)
-            {
-                if (_idStr[i] == ch) return true;
-            }
-            return false;
+            AddToken(type, null);
         }
 
-        private bool Iswhitespace(char ch)
+
+        private void AddToken(TokenType  type, object literal)
         {
-            for (int i = 0; i < _whitespaceStr.Length; i++)
-            {
-                if (_whitespaceStr[i] == ch) return true;
-            }
-            return false;
-        }
-
-        private bool IsPunc(char ch)
-        {
-            for (int i = 0; i < _puncStr.Length; i++)
-            {
-                if (_puncStr[i] == ch) return true;
-            }
-            return false;
-        }
-
-        public Token ReadTxt(char c)
-        {
-            var str = ReadWhile(this.IsId);
-
-            var isKeyword = this.IsKeyword(str);
-            if (isKeyword)
-            {
-                return new Token("Keyword", str);
-            }
-
-            var isOperation = this.IsOperation(str);
-            if (isOperation)
-            {
-                return new Token("Operation", this._operationDictionary[str], str);
-            }
-            return new Token("Variable", str);
-        }
-
-        private bool IsKeyword(string keyword)
-        {
-            for (int i = 0; i < this._keywords.Length; i++)
-            {
-                if (this._keywords[i] == keyword) return true;
-            }
-            return false;
-        }
-
-        private bool IsOperation(string operation)
-        {
-            return this._operationDictionary.ContainsKey(operation);
-        }
-
-        public Token PeekToken()
-        {
-            if (this._currentToken == null)
-            {
-                this._currentToken = ReadNextToken();
-            }
-            return this._currentToken;
-        }
-
-        public Token NextToken()
-        {
-            var token = this._currentToken;
-            this._currentToken = null;
-            if (token == null)
-            {
-                return this.ReadNextToken();
-            }
-            return token;
-        }
-
-        public bool IsEof()
-        {
-            return PeekToken() == null;
+            string text = _scanner.GetStartToCurrent();
+            Tokens.Add(new Token(type, text, literal, _scanner.Line));
         }
     }
 }

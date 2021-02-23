@@ -1,23 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using HlangInterpreter.ExprLib;
 using HlangInterpreter.lib;
 
 namespace HlangInterpreter
 {
     class Program
     {
+        private static bool _hadSyntaxError = false;
+        private static bool _hadRuntimeERror = false;
         static void Main(string[] args)
         {
-            var str = "sum is fn(x,y) { x add y; } print(sum(5, 6));";
 
-            var str2 = "sum is fn(x, y) { x add y; } sumOfAddition is sum(5, 6); if sumOfAddition is greater than 12 print(sumOfAddition);";
-            var tokenizer = new Tokenizer(new Scanner(str));
-            while (!tokenizer.IsEof())
+            if (args.Length > 1)
             {
-                Console.WriteLine(tokenizer.PeekToken());
-                tokenizer.NextToken();
+                Console.WriteLine("Usage: Hlang {fileName}.Hlang");
+                Environment.Exit(64);
+            }
+            else if (args.Length == 1)
+            {
+                RunFromFile(args[0]);
+            }
+            else
+            {
+                StartRepl();
             }
         }
+
+        private static void StartRepl()
+        {
+            for (; ; )
+            {
+                Console.Write(">> ");
+                string line = Console.ReadLine();
+                var tokens = new Tokenizer(new Scanner(line)).GetTokens();
+                Parser parser = new Parser(tokens);
+                List<Expr> expressions = parser.Parse();
+                foreach (var expression in expressions)
+                {
+                    Console.WriteLine(expression.ToString());
+                }
+                if (_hadSyntaxError) return;
+                RunCode(line);
+            }
+
+        }
+
+        private static void RunFromFile(string filePath)
+        {
+            
+        }
+
+        private static void RunCode(string code)
+        {
+
+        }
+
     }
 }
