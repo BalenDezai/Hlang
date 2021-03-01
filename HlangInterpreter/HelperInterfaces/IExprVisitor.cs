@@ -9,5 +9,6 @@ namespace HlangInterpreter.HelperInterfaces
         T VisitLiteralExpr(Literal expr);
         T VisitBinaryExpr(Binary expr);
         T VisitGroupingExpr(Grouping expr);
+        T VisitUnaryExpr(Unary expr);
     }
 }

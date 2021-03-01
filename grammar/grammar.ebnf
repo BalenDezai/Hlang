@@ -1,7 +1,6 @@
 program:= <declaration>*;
 
-<declaration> := <variableDeclaration> | <statement>;
-<variableDeclaration> := <assignment>;
+<declaration> := <statement>;
 <statement> := <expression> | <block>;
 <block> := <tab> <declaration>;
 <expression> := <assignment>;

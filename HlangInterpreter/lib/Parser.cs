@@ -1,7 +1,8 @@
 ﻿using HlangInterpreter.TokenEnums;
 using System.Collections.Generic;
 using HlangInterpreter.ExprLib;
-using System;
+using HlangInterpreter.Errors;
+using HlangInterpreter.StmtLib;
 
 namespace HlangInterpreter.lib
 {
@@ -10,43 +11,84 @@ namespace HlangInterpreter.lib
         private List<Token> _tokens;
         private int _current = 0;
 
-        public Parser(List<Token> tokens)
+        public List<Statement> Parse(List<Token> tokens)
         {
             _tokens = tokens;
-        }
-
-        public List<Expr> Parse()
-        {
-            List<Expr> expressions = new List<Expr>();
+            List<Statement> Statements = new List<Statement>();
             while (!IsAtEnd())
             {
-                expressions.Add(Expression());
+                Statements.Add(Decalration());
             }
-            return expressions;
+            return Statements;
+        }
+
+        private Statement Decalration()
+        {
+            return Statement();
+        }
+
+        private Statement Statement()
+        {
+            if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Check(TokenType.INDENT)) return new Block(Block());
+            return ExpressionStatement();
+        }
+
+        private List<Statement> Block()
+        {
+            if (Previous().Type != TokenType.THEN)
+            {
+                throw new ParsingError(Peek(), "Unexpected use of indentation");
+            }
+
+            List<Statement> statements = new List<Statement>();
+            return statements;
+        }
+
+        private Statement ExpressionStatement()
+        {
+            Expr expr = Expression();
+            return new Expression(expr);
+        }
+
+        private Statement PrintStatement()
+        {
+            Expr value = Expression();
+            return new Print(value);
         }
 
         private Expr Expression()
         {
-            var x = Assignment();
-            return x;
+            return Assignment();
         }
 
         private Expr Assignment()
         {
             var expr = Equality();
 
-            if (Match(TokenType.IS))
-            {
-                Token isToken = Previous();
-                //if (Match(TokenType.EQUAL))
-                Expr value = Assignment();
+            //if (Match(TokenType.IS))
+            //{
+            //    Token isToken = Previous();
+            //    Expr value = Assignment();
 
-                if (expr is Variable)
-                {
-                    Token name = ((Variable)expr).Name;
-                    return new Assign(name, value);
-                }
+            //    if (expr is Variable)
+            //    {
+            //        Token name = ((Variable)expr).Name;
+            //        return new Assign(name, value);
+            //    }
+            //    throw new ParsingError(isToken, "Assignment target is invalid");
+            //}
+
+            if (Check(TokenType.IS))
+            {
+                Token Name = Previous();
+                Expr init = null;
+                if (MatchNext(TokenType.EQUAL, TokenType.NOT)) return Equality();
+                Advance();
+                init = Assignment();
+                return new Assign(Name, init);
             }
+            
             return expr;
         }
 
@@ -58,15 +100,18 @@ namespace HlangInterpreter.lib
             {
                 while (MatchNext(TokenType.NOT, TokenType.EQUAL))
                 {
+                    if (Previous().Type == TokenType.EQUAL)
+                    {
+                        Consume(TokenType.TO, "Expect 'to' after expression");
+                    }
                     Token opr = Peek();
-                    while (CheckNext(TokenType.TO) || Check(TokenType.TO)) Advance();
+                    
                     Expr right = Comparison();
                     expr = new Binary(expr, opr, right);
                 }
             }
 
             return expr;
-
         }
 
         private Expr Comparison()
@@ -74,11 +119,35 @@ namespace HlangInterpreter.lib
             Expr expr = Term();
             if (Check(TokenType.IS))
             {
-                
-                while (MatchNext(TokenType.GREATER, TokenType.LESS))
+                bool equal = false;
+                // potential trouble
+                if (MatchNextConsecutively(TokenType.EQUAL, TokenType.OR))
                 {
-                    Token opr = Peek();
-                    while (CheckNext(TokenType.THAN) || Check(TokenType.THAN)) Advance();
+                    equal = true;
+                }
+
+                while (Match(TokenType.GREATER, TokenType.LESS))
+                {
+                    Token opr = Previous();
+                    if (opr.Type == TokenType.GREATER && equal)
+                    {
+                        opr.Type = TokenType.GREATER_EQUAL;
+                        
+                    }
+                    else if (opr.Type == TokenType.GREATER)
+                    {
+                        opr.Type = TokenType.GREATER;
+                    }
+                    else if (opr.Type == TokenType.LESS && equal)
+                    {
+                        opr.Type = TokenType.LESS_EQUAL;
+                    }
+                    else
+                    {
+                        opr.Type = TokenType.LESS;
+                    }
+                    Consume(TokenType.THAN, "Expect 'than' after expression");
+
                     Expr right = Primary();
                     expr = new Binary(expr, opr, right);
                 }
@@ -90,7 +159,7 @@ namespace HlangInterpreter.lib
         {
             Expr expr = Factor();
 
-            while (Match(TokenType.ADD, TokenType.SUBTRACT))
+            while (Match(TokenType.ADD, TokenType.SUBTRACT, TokenType.PLUS, TokenType.MINUS))
             {
                 Token opr = Previous();
                 Expr right = Factor();
@@ -103,16 +172,27 @@ namespace HlangInterpreter.lib
 
         private Expr Factor()
         {
-            Expr expr = Primary();
+            Expr expr = Unary();
             while (Match(TokenType.DIVIDE, TokenType.MULTIPLY))
             {
                 Token opr = Previous();
-                while (CheckNext(TokenType.BY) || Check(TokenType.BY)) Advance();
+                Consume(TokenType.BY, "Expect 'or' after expression");
                 Expr right = Primary();
                 expr = new Binary(expr, opr, right);
 
             }
             return expr;
+        }
+
+        private Expr Unary()
+        {
+            if (Match(TokenType.NOT) || Match(TokenType.REVERSE))
+            {
+                Token opr = Previous();
+                Expr right = Unary();
+                return new Unary(opr, right);
+            }
+            return Primary();
         }
 
         private Expr Primary()
@@ -134,7 +214,29 @@ namespace HlangInterpreter.lib
                 Consume(TokenType.RIGHT_PAREN, "Expect ')' after expression");
                 return new Grouping(expr);
             }
-            throw new Exception("error");
+            throw new ParsingError(Peek(), "Expected an expression");
+        }
+
+        public void SynchronizeParsing()
+        {
+            Advance();
+            while (!IsAtEnd())
+            {
+                switch (Previous().Type)
+                {
+
+                    case TokenType.IDENTIFER:
+                    case TokenType.DEFINE:
+                    case TokenType.FOR:
+                    case TokenType.IF:
+                    case TokenType.PRINT:
+                    case TokenType.RETURN:
+                    case TokenType.WHILE:
+                        return;
+                }
+                Advance();
+            }
+
         }
 
         private bool Match(params TokenType[] types)
@@ -150,12 +252,29 @@ namespace HlangInterpreter.lib
             return false;
         }
 
+        private bool MatchNextConsecutively(params TokenType[] types)
+        {
+            foreach (TokenType type in types)
+            {
+                if (CheckNext(type))
+                {
+                    Advance();
+                } else
+                {
+                    return false;
+                }
+            }
+            Advance();
+            return true;
+        }
+
         private bool MatchNext(params TokenType[] types)
         {
             foreach (var tokentype in types)
             {
                 if (CheckNext(tokentype))
                 {
+                    Advance();
                     Advance();
                     return true;
                 }
@@ -204,56 +323,7 @@ namespace HlangInterpreter.lib
         private Token Consume(TokenType type, string msg)
         {
             if (Check(type)) return Advance();
-            throw new Exception(msg);
+            throw new ParsingError(Peek(), msg);
         }
-
-        //public void Parse()
-        //{
-        //    while (!this._tokenizer.IsEof())
-        //    {
-                
-        //    }
-        //}
-
-        //public bool IsPunc()
-        //{
-        //    var token = this._tokenizer.PeekToken();
-        //    if (token.Type == "Punc")
-        //    {
-        //        return true;
-        //    } 
-        //    else
-        //    {
-        //        return false;
-        //    }
-        //}
-
-        //public bool IsKeyword()
-        //{
-        //    var token = this._tokenizer.PeekToken();
-        //    if (token.Type == "Keyword")
-        //    {
-        //        return true;
-        //    }
-        //    else
-        //    {
-        //        return false;
-        //    }
-        //}
-        
-        //public bool isOperation()
-        //{
-        //    var token = this._tokenizer.PeekToken();
-        //    if (token.Type == "Operation")
-        //    {
-        //        return true;
-        //    }
-        //    else
-        //    {
-        //        return false;
-        //    }
-        //}
-
-        
     }
 }
