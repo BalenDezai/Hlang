@@ -1,4 +1,4 @@
-﻿using HlangInterpreter.StmtLib;
+﻿using HlangInterpreter.Statements;
 
 namespace HlangInterpreter.HelperInterfaces
 {
@@ -7,5 +7,11 @@ namespace HlangInterpreter.HelperInterfaces
         T VisitPrintStatement(Print statement);
         T VisitExpressionStatement(Expression statement);
         T VisitBlockStatement(Block statement);
+        T VisitIfStatement(If statement);
+        T VisitWhileStatement(While statement);
+        T VisitForeachStatement(ForEach statement);
+        T visitFunctionStatement(Function statement);
+        T VisitReturnStatement(Return statement);
+        T VisitBreakStatement(Break statement);
     }
 }

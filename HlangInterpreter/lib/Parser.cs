@@ -1,8 +1,9 @@
 ﻿using HlangInterpreter.TokenEnums;
 using System.Collections.Generic;
-using HlangInterpreter.ExprLib;
+using HlangInterpreter.Expressions;
 using HlangInterpreter.Errors;
-using HlangInterpreter.StmtLib;
+using HlangInterpreter.Statements;
+using HlangInterpreter.HlangTypes;
 
 namespace HlangInterpreter.lib
 {
@@ -10,7 +11,12 @@ namespace HlangInterpreter.lib
     {
         private List<Token> _tokens;
         private int _current = 0;
+        private readonly ErrorReporting _errorReporting;
 
+        public Parser(ErrorReporting errorReporting)
+        {
+            _errorReporting = errorReporting;
+        }
         public List<Statement> Parse(List<Token> tokens)
         {
             _tokens = tokens;
@@ -24,14 +30,90 @@ namespace HlangInterpreter.lib
 
         private Statement Decalration()
         {
-            return Statement();
+            try
+            {
+                if (Match(TokenType.DEFINE)) return FunctionStatement();
+                return Statement();
+            }
+            catch (ParsingError err)
+            {
+                _errorReporting.ReportError(err.Token.Line, err.Token.Lexeme, err.Message);
+                SynchronizeParsing();
+                return null;
+            }
+            
         }
+
+        private Function FunctionStatement()
+        {
+            Consume(TokenType.FUNCTION, "Expect 'function' after 'define'");
+            Token name = Consume(TokenType.IDENTIFER, "Expect function name");
+            Consume(TokenType.LEFT_PAREN, "Expected '(' after function name");
+            List<Token> paramters = new List<Token>();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (paramters.Count >= 20)
+                    {
+                        Token token = Peek();
+                        _errorReporting.ReportError(token.Line, token.Lexeme, "Can't have more than 20 parameters");
+                    }
+                    paramters.Add(Consume(TokenType.IDENTIFER, "Expect paramter name"));
+                } while (Match(TokenType.COMA));
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after paramters");
+            Consume(TokenType.THEN, "Expected 'then' after function declaration");
+            List<Statement> body = Block();
+            return new Function(name, paramters, body);
+        }
+
 
         private Statement Statement()
         {
             if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.IF)) return IfStatement();
+            if (Match(TokenType.WHILE)) return WhileStatement();
+            if (Match(TokenType.FOR)) return ForStatement();
             if (Check(TokenType.INDENT)) return new Block(Block());
+            if (Match(TokenType.RETURN)) return ReturnStatement();
+            if (Match(TokenType.BREAK)) return BreakStatement();
             return ExpressionStatement();
+        }
+
+
+        private Statement ForStatement()
+        {
+            Consume(TokenType.EACH, "Expect 'each' after for");
+            Variable identifer = (Variable)Expression();
+            Consume(TokenType.IN, "Expect 'in' after identifer");
+            Expr list = Expression();
+            Consume(TokenType.THEN, "Expect 'then' after list name");
+            Block body = new Block(new List<Statement> { Statement() });
+            return new ForEach(identifer, list, body);
+        }
+
+        private Statement WhileStatement()
+        {
+            Expr condition = Expression();
+            Consume(TokenType.THEN, "Expect 'then' after while condition");
+            Statement body = Statement();
+            return new While(condition, body);
+        }
+
+        private Statement IfStatement()
+        {
+            Expr condition = Expression();
+            Consume(TokenType.THEN, "Expect 'then' after if condition");
+
+            Statement thenBranch = Statement();
+            Statement elseBranch = null;
+            if (Match(TokenType.ELSE))
+            {
+                Consume(TokenType.THEN, "Expect 'then' after else");
+                elseBranch = Statement();
+            }
+            return new If(condition, thenBranch, elseBranch);
         }
 
         private List<Statement> Block()
@@ -41,8 +123,31 @@ namespace HlangInterpreter.lib
                 throw new ParsingError(Peek(), "Unexpected use of indentation");
             }
 
+            Advance();
+
             List<Statement> statements = new List<Statement>();
+
+            while (!Match(TokenType.DEDENT) && !IsAtEnd())
+            {
+                statements.Add(Decalration());
+            }
+
             return statements;
+        }
+
+        private Statement ReturnStatement()
+        {
+            Expr value = null;
+            if (!Check(TokenType.DEDENT))
+            {
+                value = Expression();
+            }
+            return new Return(value);
+        }
+
+        private Statement BreakStatement()
+        {
+            return new Break(Previous());
         }
 
         private Statement ExpressionStatement()
@@ -53,7 +158,9 @@ namespace HlangInterpreter.lib
 
         private Statement PrintStatement()
         {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' for function call");
             Expr value = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' for function call");
             return new Print(value);
         }
 
@@ -64,20 +171,8 @@ namespace HlangInterpreter.lib
 
         private Expr Assignment()
         {
-            var expr = Equality();
+            Expr expr = Or();
 
-            //if (Match(TokenType.IS))
-            //{
-            //    Token isToken = Previous();
-            //    Expr value = Assignment();
-
-            //    if (expr is Variable)
-            //    {
-            //        Token name = ((Variable)expr).Name;
-            //        return new Assign(name, value);
-            //    }
-            //    throw new ParsingError(isToken, "Assignment target is invalid");
-            //}
 
             if (Check(TokenType.IS))
             {
@@ -92,6 +187,31 @@ namespace HlangInterpreter.lib
             return expr;
         }
 
+        private Expr Or()
+        {
+            Expr expr = And();
+            while (Match(TokenType.OR))
+            {
+                Token opr = Previous();
+                Expr right = And();
+                expr = new Logical(expr, opr, right);
+            }
+
+            return expr;
+        }
+
+        private Expr And()
+        {
+            Expr expr = Equality();
+            while(Match(TokenType.AND))
+            {
+                Token opr = Previous();
+                Expr right = Equality();
+                expr = new Logical(expr, opr, right);
+            }
+            return expr;
+        }
+
         private Expr Equality()
         {
             Expr expr = Comparison();
@@ -100,11 +220,12 @@ namespace HlangInterpreter.lib
             {
                 while (MatchNext(TokenType.NOT, TokenType.EQUAL))
                 {
-                    if (Previous().Type == TokenType.EQUAL)
+                    Token opr = Previous();
+
+                    if (opr.Type == TokenType.EQUAL)
                     {
                         Consume(TokenType.TO, "Expect 'to' after expression");
                     }
-                    Token opr = Peek();
                     
                     Expr right = Comparison();
                     expr = new Binary(expr, opr, right);
@@ -126,7 +247,7 @@ namespace HlangInterpreter.lib
                     equal = true;
                 }
 
-                while (Match(TokenType.GREATER, TokenType.LESS))
+                while (MatchNext(TokenType.GREATER, TokenType.LESS))
                 {
                     Token opr = Previous();
                     if (opr.Type == TokenType.GREATER && equal)
@@ -159,7 +280,7 @@ namespace HlangInterpreter.lib
         {
             Expr expr = Factor();
 
-            while (Match(TokenType.ADD, TokenType.SUBTRACT, TokenType.PLUS, TokenType.MINUS))
+            while (Match(TokenType.ADD, TokenType.SUBTRACT, TokenType.PLUS, TokenType.MINUS, TokenType.MODULUS))
             {
                 Token opr = Previous();
                 Expr right = Factor();
@@ -192,11 +313,29 @@ namespace HlangInterpreter.lib
                 Expr right = Unary();
                 return new Unary(opr, right);
             }
-            return Primary();
+            return FunctionCall();
+        }
+
+        private Expr FunctionCall()
+        {
+            Expr expr = Primary();
+            while (true)
+            {
+                if (Match(TokenType.LEFT_PAREN))
+                {
+                    expr = FinishFunctionCall(expr);
+                }
+                else
+                {
+                    break;
+                }
+            }
+            return expr;
         }
 
         private Expr Primary()
         {
+
             if (Match(TokenType.FALSE)) return new Literal(false);
             if (Match(TokenType.TRUE)) return new Literal(true);
             if (Match(TokenType.NOTHING)) return new Literal(null);
@@ -208,6 +347,23 @@ namespace HlangInterpreter.lib
 
             if (Match(TokenType.IDENTIFER)) return new Variable(Previous());
 
+            if (Match(TokenType.LEFT_BRACKET))
+            {
+                HlangList<Expr> values = new HlangList<Expr>();
+                while (!Match(TokenType.RIGHT_BRACKET))
+                {
+                    if (!Check(TokenType.COMA))
+                    {
+                        values.Add(Primary());
+                    }
+                    else
+                    {
+                        Advance();
+                    }
+                }
+                return new List(values);
+            }
+
             if(Match(TokenType.LEFT_PAREN))
             {
                 Expr expr = Expression();
@@ -215,6 +371,25 @@ namespace HlangInterpreter.lib
                 return new Grouping(expr);
             }
             throw new ParsingError(Peek(), "Expected an expression");
+        }
+
+        private Expr FinishFunctionCall(Expr callee)
+        {
+            List<Expr> arguments = new List<Expr>();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (arguments.Count >= 20)
+                    {
+                        Token token = Peek();
+                        _errorReporting.ReportError(token.Line, token.Lexeme, "Can't have more than 20 arguments");
+                    }
+                    arguments.Add(Expression());
+                } while (Match(TokenType.COMA));
+            }
+            Token paren = Consume(TokenType.RIGHT_PAREN, "Expected ')' after arguments");
+            return new FunctionCall(callee, paren, arguments);
         }
 
         public void SynchronizeParsing()
@@ -256,15 +431,15 @@ namespace HlangInterpreter.lib
         {
             foreach (TokenType type in types)
             {
-                if (CheckNext(type))
-                {
-                    Advance();
-                } else
+                if (!CheckNext(type))
                 {
                     return false;
                 }
             }
-            Advance();
+            for (int i = 0; 0 < types.Length; i++)
+            {
+                Advance();
+            }
             return true;
         }
 

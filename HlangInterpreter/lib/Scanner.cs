@@ -8,7 +8,9 @@
         public int Start { get; set; }
         public string CodeStr { get; set; }
         public int Position { get; set; }
-        public int Line { get; set; }
+        // is at begining of line
+        public bool IsAbol { get; set; } = true;
+        public int Line { get; set; } = 1;
 
         public Scanner(string codeStr)
         {

@@ -1,5 +1,5 @@
 ﻿using HlangInterpreter.Errors;
-using HlangInterpreter.StmtLib;
+using HlangInterpreter.Statements;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,15 +9,19 @@ namespace HlangInterpreter.lib
 {
     public class HumanLanguage
     {
-        private Interpreter _interpreter;
+        private readonly Interpreter _interpreter;
+        private readonly ErrorReporting _errorReporting;
+
         public HumanLanguage()
         {
             _interpreter = new Interpreter();
+            _errorReporting = new ErrorReporting();
         }
         public void RunFromFile(string filePath)
         {
-            byte[] bytes = File.ReadAllBytes(filePath);
-            string code = Encoding.Default.GetString(bytes);
+            //byte[] bytes = File.ReadAllText(filePath);
+            //string code = Encoding.Default.GetString(bytes);
+            string code = File.ReadAllText(filePath);
             RunCode(code);
         }
         public void StartRepl()
@@ -35,7 +39,7 @@ namespace HlangInterpreter.lib
         private void RunCode(string code)
         {
             var tokenizer = new Tokenizer(new Scanner(code));
-            Parser parser = new Parser();
+            Parser parser = new Parser(_errorReporting);
             try
             {
                 List<Statement> statements = parser.Parse(tokenizer.GetTokens());
@@ -45,16 +49,11 @@ namespace HlangInterpreter.lib
             {
                 ReportError(err.Line, "", err.Message);
             }
-            catch (ParsingError err)
-            {
-                ReportError(err.Token.Line, $"At {err.Token.Lexeme}", err.Message);
-                parser.SynchronizeParsing();
-            }
         }
 
         private void ReportError(int line, string where, string message)
         {
-            Console.WriteLine($"[line {line}] Error{where}: {message}");
+            Console.WriteLine($"[line {line}] Error at '{where}': {message}");
         }
 
     }

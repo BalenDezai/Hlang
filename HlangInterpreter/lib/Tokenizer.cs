@@ -15,9 +15,12 @@ namespace HlangInterpreter.lib
 
         private readonly Scanner _scanner;
         private readonly Dictionary<string, TokenType> _keywords;
-
+        private readonly Stack<int> _indentStack;
+        private readonly int _tabSize = 8;
         public Tokenizer(Scanner scanner)
         {
+            this._indentStack = new Stack<int>();
+            _indentStack.Push(0);
             this._scanner = scanner;
             this._keywords = new Dictionary<string, TokenType>()
             {
@@ -50,7 +53,9 @@ namespace HlangInterpreter.lib
                 {"then", TokenType.THEN },
                 {"or", TokenType.OR },
                 {"define", TokenType.DEFINE },
-                {"to", TokenType.TO }
+                {"to", TokenType.TO },
+                {"in", TokenType.IN },
+                {"break", TokenType.BREAK }
             };
 
         }
@@ -69,7 +74,12 @@ namespace HlangInterpreter.lib
 
         private void ReadNextToken()
         {
-            //  TODO: handle if its whitespace start
+            if (_scanner.IsAbol)
+            {
+                GetIndentLevel();
+                return;
+            }
+
             char c = _scanner.MoveToNextChar();
             switch (c)
             {
@@ -78,12 +88,13 @@ namespace HlangInterpreter.lib
                 case '(': AddToken(TokenType.LEFT_PAREN); break;
                 case ')': AddToken(TokenType.RIGHT_PAREN); break;
                 case '/': SkipComment(); break;
+                case '[': AddToken(TokenType.LEFT_BRACKET); break;
+                case ']': AddToken(TokenType.RIGHT_BRACKET); break;
+                case ',': AddToken(TokenType.COMA); break;
+                case '\r': break;
                 case '\n':
-                    _scanner.Line++;
-                    if (_scanner.Match(' '))
-                    {
-                        AddToken(TokenType.INDENT);
-                    }
+                    _scanner.IsAbol = true;
+                    _scanner.Line++;  
                     break;
                 case '"': ReadString(); break;
                 default:
@@ -100,6 +111,55 @@ namespace HlangInterpreter.lib
                     }
                     break;
             }
+        }
+
+        private void GetIndentLevel()
+        {
+            int col = 0;
+            for (; ; )
+            {
+                char character = _scanner.PeekCurrentChar();
+                if (character == ' ')
+                {
+                    col++;
+                    _scanner.MoveToNextChar();
+                }
+                else if (character == '\t')
+                {
+                    col = (col / _tabSize + 1) * _tabSize;
+                    _scanner.MoveToNextChar();
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (col > 0 &&_scanner.Line == 1)
+            {
+                throw new SyntaxError(_scanner.Line, "Unexpected start of program indent");
+            }
+
+            if (col > _indentStack.Peek())
+            {
+                _indentStack.Push(col);
+                AddToken(TokenType.INDENT);
+                
+            }
+            else
+            {
+                while (col < _indentStack.Peek())
+                {
+                    _indentStack.Pop();
+                    AddToken(TokenType.DEDENT);
+                }
+
+                if (col != _indentStack.Peek())
+                {
+                    throw new SyntaxError(_scanner.Line, "Unexpected indent");
+                }
+            }
+            _scanner.IsAbol = false;
         }
 
         /// <summary>

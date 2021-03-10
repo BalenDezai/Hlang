@@ -1,27 +1,52 @@
 program:= <declaration>*;
 
-<declaration> := <statement>;
-<statement> := <expression> | <block>;
-<block> := <tab> <declaration>;
+(* declaration*)
+<declaration> := functionDeclaration | assignment | <statement>;
+<functionDeclaration> := 'define function' <function>;
+
+(* statements*)
+<statement> := <expression> | <ifStatement> | <forStatement> | returnStatement | <expression> | <whileStatement> | block;
+<while> := 'while' <expression> 'then' <block>;
+<ifStatement> := 'if' <expression> 'then' <block>  ('else then' statement)?;
+<forStatement> := 'for' <identifier> 'in' <list> <block> ;
+<block> := NEWLINE INDENT <statement> DEDENT;
+<returnStatement> := 'return' <expression>?;
+<breakStatement> := 'break';
+
+(* expressions*)
 <expression> := <assignment>;
-<assignment> := <identifer> 'is' <assignment> | <equality>;
+<assignment> := <identifer> 'is' <assignment> | <logicOr>;
+<logicOr> :=  <logicAnd> ('or' <logicAnd>)*;
+<logicAnd> := <equality> ('and' equality)*;
 <equality> := <comparison> (<equalityOperators> comparison)*;
 <comparison> := <term> ( <comparisonOperators> <term> )*;
 <term> := <factor> ( <termOperators> <factor> )* ;
 <factor> := <unary> ( <factorizationOperators> <unary> )*;
 <unary> := ( 'not' | 'reverse' )+ <unary> | <primary>;
+<functionCall> := primary ( '(' arguments ')')*;
+<breakLoop> := 'break';
 <primary> :=  <object> | "true" | "false" | "nothing" | '(' <expression> ')' | <identifer> ;
 
 
+(* Function *)
+<function> := <identifier> '(' parameters? ')' <block>;
+<parameters := <identifer> (',' <identifier>)*;
+<arguments> := expression (',' expression)*;
+
+(*types*)
+<object> := <number> | <string> | <list>;
+<list> := '[' object? (',' object)* ']';
 <identifier> := '_'? <letter> ( <letter> | <digit>  )* ;
-<object> := <number> | <string>;
 <number> :=  '-'? <digit>+ ('.' <digit>+)*;
 <string> := '"' <letter>+ '"' ;
 
+(* operators*)
 <equalityOperators> := 'is equal to' | 'is not' ;
 <comparisonOperators> := 'is greater than' | 'is less than'´| 'is equal or greater than' | 'is equal or less than';
 <termOperators> := 'add' | 'plus' | 'subtract' | 'minus';
 <factorizationOperators> := 'divide by' | 'multiply by';
+
+(* basic types*)
 <letter> := 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' 
         | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N' 
         | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' 
@@ -31,4 +56,3 @@ program:= <declaration>*;
         | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w'
         | 'x' | 'y' | 'z' ;
 <digit> := '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ;
-<tab> := '    ';

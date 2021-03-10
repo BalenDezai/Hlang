@@ -1,0 +1,92 @@
+﻿/*age is 24
+name is "cas"
+if name is equal to "cas" then
+  print(true)
+else then
+  print(false)
+
+if 5 is equal to 5 and age is equal to 24 then
+  print("logical and works")
+
+if 5 is not 5 or age is equal to 24 then
+  print("logical or works")
+
+count is 0
+while count is less than 5 then
+  print(count)
+  count is count plus 1
+
+nameList is ["john", "smith", "faroe"]
+
+for each name in nameList then
+  print(name)
+
+for each name in nameList then
+  name is "fuck you " plus name
+  print(name)
+
+twoDList is [["john","smith", "faroe"], [41, 52, 53]]
+print(twoDList)
+print([])
+
+for each list in twoDList then
+  print(list)
+
+
+define function CountToTen() then
+  i is 0
+  while i is less than 10 then
+    i is i plus 1
+    print(i)
+
+CountToTen()
+
+define function IsOdd(a) then
+  if (a modulus 2) is equal to 0 then
+    return false
+  else then
+    return true
+print(IsOdd(5))
+
+// closure test
+define function makeCounter() then
+  i is 0
+  define function count() then
+    i is i plus 1
+    print(i)
+  return count
+
+counter is makeCounter()
+counter()
+counter()*/
+
+// test return
+define function returnNumber(n) then
+  numList is [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  for each number in numList then
+    if number is equal to n then
+      return n
+    else then
+      print(number)
+returnNumber(5)
+
+// test break
+
+/*h is 9
+while true then
+  h is h plus 1
+  print(h)
+  if h is equal to 10 then
+    print("break reached")
+    break
+
+
+define function doesNameExist(nameToFind) then
+ nameArr is ["john", "Smith", "Colin"]
+ for each name in nameArr then
+   if name is equal to nameToFind then
+     print("name does exist!")
+     break
+   else then
+     print("checking" plus  name)
+doesNameExist("Smith")*/

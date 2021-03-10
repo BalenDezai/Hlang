@@ -1,18 +1,21 @@
-﻿using HlangInterpreter.ExprLib;
+﻿using HlangInterpreter.Expressions;
 using HlangInterpreter.HelperInterfaces;
 using HlangInterpreter.TokenEnums;
 using HlangInterpreter.Errors;
 using System.Collections.Generic;
-using HlangInterpreter.StmtLib;
+using HlangInterpreter.Statements;
 using System;
+using HlangInterpreter.HlangTypes;
 
 namespace HlangInterpreter.lib
 {
-    public class Interpreter : IExprVisitor<object>, IStatementVisitor<object>
+    public class Interpreter : IExpressionVisitor<object>, IStatementVisitor<object>
     {
-        public Environment Environment { get; set; }
+        public Environment Globals { get; set; }
+        private Environment Environment { get; set; }
         public Interpreter()
         {
+            Globals = new Environment();
             Environment = new Environment();
         }
         public void Interpret(List<Statement> statements)
@@ -83,6 +86,9 @@ namespace HlangInterpreter.lib
                 case TokenType.SUBTRACT:
                     CheckNumberOperands(expr.Operator, left, right);
                     return (double)left - (double)right;
+                case TokenType.MODULUS:
+                    CheckNumberOperands(expr.Operator, left, right);
+                    return (double)left % (double)right;
                 case TokenType.MULTIPLY:
                     CheckNumberOperands(expr.Operator, left, right);
                     return (double)left * (double)right;
@@ -127,9 +133,10 @@ namespace HlangInterpreter.lib
             return expression.Accept(this);
         }
 
-        private void Execute(Statement statement)
+        private object Execute(Statement statement)
         {
-            statement.Accept(this);
+            var test = statement.Accept(this);
+            return test;
         }
 
         private void CheckNumberOperand(Token opr, object operand)
@@ -158,7 +165,7 @@ namespace HlangInterpreter.lib
             return left.Equals(right);
         }
 
-       private string Stringify(object obj)
+        private string Stringify(object obj)
         {
             if (obj == null) return "nothing";
             if (obj is double)
@@ -168,6 +175,7 @@ namespace HlangInterpreter.lib
                 {
                     text = text.Substring(0, text.Length - 2);
                 }
+                return text;
             }
             return obj.ToString();
         }
@@ -180,7 +188,134 @@ namespace HlangInterpreter.lib
 
         public object VisitBlockStatement(Block statement)
         {
-            throw new NotImplementedException();
+            return ExecuteBlock(statement.Statements, new Environment(Environment));
+        }
+
+        public object ExecuteBlock(List<Statement> statements, Environment environment)
+        {
+            Environment previous = Environment;
+            object value = null;
+            try
+            {
+                Environment = environment;
+                foreach (var statement in statements)
+                {
+                    value = Execute(statement);
+                }
+            }
+            finally
+            {
+                Environment = previous;
+            }
+            return value;
+        }
+
+        public object VisitIfStatement(If statement)
+        {
+            if (IsTruthy(Evaluate(statement.Condition)))
+            {
+                return Execute(statement.ThenBranch);
+            } else if (statement.ElseBranch != null)
+            {
+                return Execute(statement.ElseBranch);
+            }
+            return null;
+        }
+
+        public object VisitLogicalExpr(Logical expr)
+        {
+            object left = Evaluate(expr.Left);
+            if (expr.Operator.Type == TokenType.OR)
+            {
+                if (IsTruthy(left)) return true;
+            }
+            else
+            {
+                if (!IsTruthy(left)) return false;
+            }
+
+            return Evaluate(expr.Right);
+        }
+
+        public object VisitWhileStatement(While statement)
+        {
+            while(IsTruthy(Evaluate(statement.Condition)))
+            {
+                var ret = Execute(statement.Body);
+                if (ret is Break)
+                {
+                    break;
+                }
+                
+            }
+            return null;
+        }
+
+        public object VisitListExpr(List expr)
+        {
+            HlangList<object> values = new HlangList<object>();
+            foreach (var item in expr.Values)
+            {
+                values.Add(Evaluate(item));
+            }
+            return values;
+        }
+
+        public object VisitForeachStatement(ForEach statement)
+        {
+            var list = (List<object>)Evaluate(statement.List);
+            for (int i = 0; i < list.Count; i++)
+            {
+                Environment env = new Environment(Environment);
+                env.Add(statement.Identifier.Name.Lexeme, list[i]);
+                if (ExecuteBlock(statement.Block.Statements, env) is Break)
+                {
+                    break;
+                }
+                list[i] = env.GetValue(statement.Identifier.Name);
+            }
+            return null;
+        }
+
+        public object VisitFunctionCallExpr(FunctionCall expr)
+        {
+            object callee = Evaluate(expr.Callee);
+            List<object> arguments = new List<object>();
+            foreach (Expr argument in expr.Arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+
+            if (!(callee is ICallable))
+            {
+                throw new RuntimeError(expr.Paren, "Only functions are callable");
+            }
+
+            ICallable function = (ICallable)callee;
+            if (arguments.Count != function.ArgumentLength)
+            {
+                throw new RuntimeError(expr.Paren, $"Expected {function.ArgumentLength} arguments but got {arguments.Count}");
+            }
+            return function.Call(this, arguments);
+        }
+
+        public object visitFunctionStatement(Function statement)
+        {
+            HlangFunction function = new HlangFunction(statement, Environment);
+            Environment.Add(statement.Name.Lexeme, function);
+            return null;
+        }
+
+        public object VisitReturnStatement(Return statement)
+        {
+            object value = null;
+            if (statement.Value != null) value = Evaluate(statement.Value);
+            return value;
+        }
+
+        public object VisitBreakStatement(Break statement)
+        {
+            return statement;
         }
     }
 }
