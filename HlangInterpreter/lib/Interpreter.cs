@@ -310,7 +310,7 @@ namespace HlangInterpreter.lib
         {
             object value = null;
             if (statement.Value != null) value = Evaluate(statement.Value);
-            return value;
+            throw new HlangReturn(value);
         }
 
         public object VisitBreakStatement(Break statement)

@@ -333,6 +333,11 @@ namespace HlangInterpreter.lib
             return expr;
         }
 
+        private Expr Lambda()
+        {
+
+        }
+
         private Expr Primary()
         {
 

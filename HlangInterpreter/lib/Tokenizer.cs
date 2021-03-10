@@ -55,7 +55,8 @@ namespace HlangInterpreter.lib
                 {"define", TokenType.DEFINE },
                 {"to", TokenType.TO },
                 {"in", TokenType.IN },
-                {"break", TokenType.BREAK }
+                {"break", TokenType.BREAK },
+                {"lambda", TokenType.LAMBDA }
             };
 
         }
@@ -91,6 +92,12 @@ namespace HlangInterpreter.lib
                 case '[': AddToken(TokenType.LEFT_BRACKET); break;
                 case ']': AddToken(TokenType.RIGHT_BRACKET); break;
                 case ',': AddToken(TokenType.COMA); break;
+                case '=':
+                    if (_scanner.Match('>'))
+                    {
+                        AddToken(TokenType.LAMBDA);
+                    }
+                    break;
                 case '\r': break;
                 case '\n':
                     _scanner.IsAbol = true;

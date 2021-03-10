@@ -32,7 +32,7 @@ namespace HlangInterpreter.HlangTypes
             {
                 interpreter.ExecuteBlock(_funcDeclaration.Body, env);
             }
-            catch (Return value)
+            catch (HlangReturn value)
             {
                 return value.Value;
             }
