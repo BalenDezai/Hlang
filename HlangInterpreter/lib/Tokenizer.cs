@@ -3,7 +3,7 @@ using System.Globalization;
 using HlangInterpreter.Errors;
 using HlangInterpreter.TokenEnums;
 
-namespace HlangInterpreter.lib
+namespace HlangInterpreter.Lib
 {
     /// <summary>
     /// Creates a list of tokens out of a sequence of code
@@ -92,12 +92,6 @@ namespace HlangInterpreter.lib
                 case '[': AddToken(TokenType.LEFT_BRACKET); break;
                 case ']': AddToken(TokenType.RIGHT_BRACKET); break;
                 case ',': AddToken(TokenType.COMA); break;
-                case '=':
-                    if (_scanner.Match('>'))
-                    {
-                        AddToken(TokenType.LAMBDA);
-                    }
-                    break;
                 case '\r': break;
                 case '\n':
                     _scanner.IsAbol = true;

@@ -13,5 +13,6 @@ namespace HlangInterpreter.HelperInterfaces
         T VisitLogicalExpr(Logical expr);
         T VisitListExpr(List expr);
         T VisitFunctionCallExpr(FunctionCall expr);
+        T VisitLambdaExpr(Lambda expr);
     }
 }

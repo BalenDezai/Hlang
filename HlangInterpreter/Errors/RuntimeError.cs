@@ -1,4 +1,4 @@
-﻿using HlangInterpreter.lib;
+﻿using HlangInterpreter.Lib;
 using System;
 
 namespace HlangInterpreter.Errors

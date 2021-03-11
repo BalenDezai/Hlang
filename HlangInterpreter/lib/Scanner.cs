@@ -1,4 +1,4 @@
-﻿namespace HlangInterpreter.lib
+﻿namespace HlangInterpreter.Lib
 {
     /// <summary>
     /// Helper class to characters and strings out of a code string

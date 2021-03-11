@@ -5,7 +5,7 @@ using HlangInterpreter.Errors;
 using HlangInterpreter.Statements;
 using HlangInterpreter.HlangTypes;
 
-namespace HlangInterpreter.lib
+namespace HlangInterpreter.Lib
 {
     public class Parser
     {
@@ -169,6 +169,8 @@ namespace HlangInterpreter.lib
             return Assignment();
         }
 
+       
+
         private Expr Assignment()
         {
             Expr expr = Or();
@@ -318,7 +320,7 @@ namespace HlangInterpreter.lib
 
         private Expr FunctionCall()
         {
-            Expr expr = Primary();
+            Expr expr = Lambda();
             while (true)
             {
                 if (Match(TokenType.LEFT_PAREN))
@@ -335,7 +337,25 @@ namespace HlangInterpreter.lib
 
         private Expr Lambda()
         {
+            if (Match(TokenType.LAMBDA))
+            {
+                List<Token> paramters = new List<Token>();
+                do
+                {
+                    if (paramters.Count >= 5)
+                    {
+                        Token token = Peek();
+                        _errorReporting.ReportError(token.Line, token.Lexeme, "Can't have more than 20 arguments");
+                    }
+                    paramters.Add(Consume(TokenType.IDENTIFER, "Expected paramter name"));
+                } while (Match(TokenType.COMA));
 
+                Consume(TokenType.THEN, "Expected 'then' after paramters");
+
+                Expr body = Expression();
+                return new Lambda(paramters, body);
+            }
+            return Primary();
         }
 
         private Expr Primary()

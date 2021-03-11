@@ -94,6 +94,9 @@ numList is [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 define function applyToNumlist(fn) then
   for each num in numList then
-    fn(num)
+    num is fn(num)
 
-applyToNumlist(lambda num then num is num plus 1)
+applyToNumlist(lambda num then num multiply by 5)
+plusOne is lambda h then h plus 1
+applyToNumlist(plusOne)
+print(numList)

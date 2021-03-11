@@ -1,6 +1,5 @@
 ﻿using HlangInterpreter.HelperInterfaces;
-using HlangInterpreter.lib;
-using System;
+using HlangInterpreter.Lib;
 
 namespace HlangInterpreter.Statements
 {

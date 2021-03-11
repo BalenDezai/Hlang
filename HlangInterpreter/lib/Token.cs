@@ -1,6 +1,6 @@
 ﻿using HlangInterpreter.TokenEnums;
 
-namespace HlangInterpreter.lib
+namespace HlangInterpreter.Lib
 {
     public class Token
     {

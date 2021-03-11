@@ -1,5 +1,5 @@
 ﻿using HlangInterpreter.HelperInterfaces;
-using HlangInterpreter.lib;
+using HlangInterpreter.Lib;
 using HlangInterpreter.Statements;
 using System.Collections.Generic;
 
@@ -23,7 +23,7 @@ namespace HlangInterpreter.HlangTypes
 
         public object Call(Interpreter interpreter, List<object> arguments)
         {
-            lib.Environment  env = new lib.Environment(_closure);
+            Lib.Environment  env = new Lib.Environment(_closure);
             for (int i = 0; i < _funcDeclaration.Paramters.Count; i++)
             {
                 env.Add(_funcDeclaration.Paramters[i].Lexeme, arguments[i]);

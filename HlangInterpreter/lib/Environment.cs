@@ -1,7 +1,7 @@
 ﻿using HlangInterpreter.Errors;
 using System.Collections.Generic;
 
-namespace HlangInterpreter.lib
+namespace HlangInterpreter.Lib
 {
     public class Environment
     {

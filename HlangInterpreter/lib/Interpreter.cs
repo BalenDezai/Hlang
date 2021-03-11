@@ -7,12 +7,12 @@ using HlangInterpreter.Statements;
 using System;
 using HlangInterpreter.HlangTypes;
 
-namespace HlangInterpreter.lib
+namespace HlangInterpreter.Lib
 {
     public class Interpreter : IExpressionVisitor<object>, IStatementVisitor<object>
     {
         public Environment Globals { get; set; }
-        private Environment Environment { get; set; }
+        public Environment Environment { get; set; }
         public Interpreter()
         {
             Globals = new Environment();
@@ -128,12 +128,12 @@ namespace HlangInterpreter.lib
             return Environment.GetValue(expr.Name);
         }
 
-        private object Evaluate(Expr expression)
+        public object Evaluate(Expr expression)
         {
             return expression.Accept(this);
         }
 
-        private object Execute(Statement statement)
+        public object Execute(Statement statement)
         {
             var test = statement.Accept(this);
             return test;
@@ -316,6 +316,11 @@ namespace HlangInterpreter.lib
         public object VisitBreakStatement(Break statement)
         {
             return statement;
+        }
+
+        public object VisitLambdaExpr(Lambda expr)
+        {
+            return new HlangLambda(expr);
         }
     }
 }

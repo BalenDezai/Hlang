@@ -14,8 +14,7 @@ program:= <declaration>*;
 <breakStatement> := 'break';
 
 (* expressions*)
-<expression> := <assignment> | lambda;
-<lambda> := 'lambda' <paramters>? 'then' <expression>;
+<expression> := <assignment>;
 <assignment> := <identifer> 'is' <assignment> | <logicOr>;
 <logicOr> :=  <logicAnd> ('or' <logicAnd>)*;
 <logicAnd> := <equality> ('and' equality)*;
@@ -25,6 +24,7 @@ program:= <declaration>*;
 <factor> := <unary> ( <factorizationOperators> <unary> )*;
 <unary> := ( 'not' | 'reverse' )+ <unary> | <primary>;
 <functionCall> := primary ( '(' arguments ')')*;
+<lambda> := 'lambda' <paramters>? 'then' <expression> | <primary>;
 <primary> :=  <object> | "true" | "false" | "nothing" | '(' <expression> ')' | <identifer> ;
 
 
