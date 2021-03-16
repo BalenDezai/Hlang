@@ -413,20 +413,7 @@ namespace HlangInterpreter.Lib
                 Expr right = Unary();
                 return new Unary(opr, right);
             }
-            return FunctionCall();
-        }
-        /// <summary>
-        /// Parse a function call expression
-        /// </summary>
-        /// <returns>A function call expression node or an expression node</returns>
-        private Expr FunctionCall()
-        {
-            Expr expr = Lambda();
-            if (Match(TokenType.LEFT_PAREN))
-            {
-                expr = FinishFunctionCall(expr);
-            }
-            return expr;
+            return Lambda();
         }
         /// <summary>
         /// Parse a lambda expression
@@ -454,7 +441,20 @@ namespace HlangInterpreter.Lib
                 Expr body = Expression();
                 return new Lambda(paramters, body);
             }
-            return Primary();
+            return FunctionCall();
+        }
+        /// <summary>
+        /// Parse a function call expression
+        /// </summary>
+        /// <returns>A function call expression node or an expression node</returns>
+        private Expr FunctionCall()
+        {
+            Expr expr = Primary();
+            if (Match(TokenType.LEFT_PAREN))
+            {
+                expr = FinishFunctionCall(expr);
+            }
+            return expr;
         }
         /// <summary>
         /// Parse a primary expression
