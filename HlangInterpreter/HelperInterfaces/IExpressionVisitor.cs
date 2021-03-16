@@ -2,6 +2,10 @@
 
 namespace HlangInterpreter.HelperInterfaces
 {
+    /// <summary>
+    /// Interface used to implement visitor pattern
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public interface IExpressionVisitor<T>
     {
         T VisitAssignExpr(Assign expr);

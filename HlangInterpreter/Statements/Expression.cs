@@ -3,6 +3,9 @@ using HlangInterpreter.HelperInterfaces;
 
 namespace HlangInterpreter.Statements
 {
+    /// <summary>
+    /// Contain and execute an expression
+    /// </summary>
     public class Expression : Statement
     {
         public Expr Expr { get; set; }

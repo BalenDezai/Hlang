@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Represent and execute a function call expression
+    /// </summary>
     public class FunctionCall : Expr
     {
         public Expr Callee { get; set; }

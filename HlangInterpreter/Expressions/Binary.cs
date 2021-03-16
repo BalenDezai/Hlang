@@ -3,6 +3,9 @@ using HlangInterpreter.Lib;
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Represent and execute a binary expression
+    /// </summary>
     public class Binary : Expr
     {
         public Binary(Expr left, Token opr, Expr right)

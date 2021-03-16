@@ -1,16 +1,16 @@
 ﻿namespace HlangInterpreter.Lib
 {
     /// <summary>
-    /// Helper class to characters and strings out of a code string
+    /// Helper class to scan over each character in a code sequence
     /// </summary>
     public class Scanner
     {
         public int Start { get; set; }
         public string CodeStr { get; set; }
         public int Position { get; set; }
-        // is at begining of line
+        // Is begining of line
         public bool IsAbol { get; set; } = true;
-        public int Line { get; set; } = 1;
+        public int Line { get; set; }
 
         public Scanner(string codeStr)
         {
@@ -21,7 +21,7 @@
         /// <summary>
         /// Moves to the next character
         /// </summary>
-        /// <returns>The previous characterr</returns>
+        /// <returns>The previous character</returns>
         public char MoveToNextChar()
         {
             Position++;
@@ -29,8 +29,9 @@
         }
 
         /// <summary>
-        /// peek at what the current character in the sequence is is
+        /// Peek current character in the sequence
         /// </summary>
+        /// <returns>Current character</returns>
         public char PeekCurrentChar()
         {
             if (IsEof()) return '\0';
@@ -38,9 +39,9 @@
         }
 
         /// <summary>
-        /// Peek at what the next character in the sequence is
+        /// Peek next character in the sequence
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Next character</returns>
         public char PeekNextChar()
         {
             // if there is no next character return null character
@@ -49,7 +50,7 @@
         }
 
         /// <summary>
-        /// Is scanner at the end of the sequence
+        /// Is end of the sequence
         /// </summary>
         public bool IsEof()
         {
@@ -57,7 +58,7 @@
         }
 
         /// <summary>
-        ///  Check if current character in sequence matches the expected character
+        ///  Check if current character matches the expected character.
         ///  If it does match, character is then consumed
         /// </summary>
         public bool Match(char expected)
@@ -68,9 +69,9 @@
             return true;
         }
         /// <summary>
-        /// Get the string value of begining position to current position in the sequence
+        /// Get value from beginning position to current position
         /// </summary>
-        /// <returns></returns>
+        /// <returns>String value</returns>
         public string GetStartToCurrent()
         {
             return CodeStr.Substring(Start, (Position - Start));

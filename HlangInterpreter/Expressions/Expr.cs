@@ -3,6 +3,9 @@ using HlangInterpreter.Lib;
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Used to implement the visitor pattern and execution of expressions
+    /// </summary>
     public abstract class Expr
     {
         public Expr Left { get; set; }

@@ -3,10 +3,12 @@ using HlangInterpreter.Statements;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace HlangInterpreter.Lib
 {
+    /// <summary>
+    /// Hlang main class that pieces it all together
+    /// </summary>
     public class HumanLanguage
     {
         private readonly Interpreter _interpreter;
@@ -17,13 +19,18 @@ namespace HlangInterpreter.Lib
             _interpreter = new Interpreter();
             _errorReporting = new ErrorReporting();
         }
+        /// <summary>
+        /// Execute code from a file
+        /// </summary>
+        /// <param name="filePath">File path</param>
         public void RunFromFile(string filePath)
         {
-            //byte[] bytes = File.ReadAllText(filePath);
-            //string code = Encoding.Default.GetString(bytes);
             string code = File.ReadAllText(filePath);
             RunCode(code);
         }
+        /// <summary>
+        /// Start up the Repl to run lines of code
+        /// </summary>
         public void StartRepl()
         {
             while (true)
@@ -35,7 +42,10 @@ namespace HlangInterpreter.Lib
             }
         }
 
-
+        /// <summary>
+        /// Execute the code given from a file or REPL
+        /// </summary>
+        /// <param name="code">Code string</param>
         private void RunCode(string code)
         {
             var tokenizer = new Tokenizer(new Scanner(code));
@@ -47,13 +57,8 @@ namespace HlangInterpreter.Lib
             }
             catch (SyntaxError err)
             {
-                ReportError(err.Line, "", err.Message);
+                _errorReporting.ReportError(err.Line, "", err.Message);
             }
-        }
-
-        private void ReportError(int line, string where, string message)
-        {
-            Console.WriteLine($"[line {line}] Error at '{where}': {message}");
         }
 
     }

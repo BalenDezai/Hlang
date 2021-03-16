@@ -3,6 +3,9 @@ using HlangInterpreter.Lib;
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Represents and executes a variable expression
+    /// </summary>
     public class Variable : Expr
     {
         public Token Name { get; set; }

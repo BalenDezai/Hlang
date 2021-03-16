@@ -3,6 +3,9 @@ using HlangInterpreter.Lib;
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Represents and executes a logical expression
+    /// </summary>
     public class Logical : Expr
     {
         public Logical(Expr left, Token opr, Expr right)

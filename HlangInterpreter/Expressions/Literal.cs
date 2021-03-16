@@ -2,6 +2,9 @@
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Represents and executes a literal expression
+    /// </summary>
     public class Literal : Expr
     {
         public object Value { get; set; }

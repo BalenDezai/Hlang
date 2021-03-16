@@ -3,6 +3,9 @@ using HlangInterpreter.Lib;
 
 namespace HlangInterpreter.Statements
 {
+    /// <summary>
+    /// Contain and execute a break statement
+    /// </summary>
     public class Break : Statement
     {
         public Token Keyword { get; set; }

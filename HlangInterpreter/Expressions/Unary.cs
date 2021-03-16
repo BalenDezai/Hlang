@@ -3,6 +3,9 @@ using HlangInterpreter.Lib;
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Represents and executes an unary expression
+    /// </summary>
     public class Unary : Expr
     {
         public Unary(Token opr, Expr right)

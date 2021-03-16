@@ -1,4 +1,4 @@
-﻿/*age is 24
+﻿age is 24
 name is "cas"
 if name is equal to "cas" then
   print(true)
@@ -10,6 +10,16 @@ if 5 is equal to 5 and age is equal to 24 then
 
 if 5 is not 5 or age is equal to 24 then
   print("logical or works")
+
+// comparison
+if 50 is equal or greater than 50 then
+  print("50 is equal or greater than 50")
+if 50 is greater than 40 then
+  print("50 is greater than 40")
+if 50 is equal or less than 50 then
+  print("50 is equal or less than 50")
+if 40 is less than 50 then
+  print("40 is less than 50")
 
 count is 0
 while count is less than 5 then
@@ -65,6 +75,7 @@ define function returnNumber(n) then
   numList is [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   for each number in numList then
     if number is equal to n then
+      print (n)
       return n
     else then
       print(number)
@@ -89,7 +100,7 @@ define function doesNameExist(nameToFind) then
      break
    else then
      print("checking" plus  name)
-doesNameExist("Smith")*/
+doesNameExist("Smith")
 numList is [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 define function applyToNumlist(fn) then

@@ -3,6 +3,9 @@ using HlangInterpreter.HelperInterfaces;
 
 namespace HlangInterpreter.Statements
 {
+    /// <summary>
+    /// Executes the return statement
+    /// </summary>
     public class Return : Statement
     {
         public Expr Value { get; set; }

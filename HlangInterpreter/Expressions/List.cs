@@ -3,6 +3,9 @@ using HlangInterpreter.HlangTypes;
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Represents a list assignment expression
+    /// </summary>
     public class List : Expr
     {
         public HlangList<Expr> Values { get; set; }

@@ -2,6 +2,9 @@
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Represent and execute a grouping expression
+    /// </summary>
     public class Grouping : Expr
     {
         public Expr Expression { get; set; }

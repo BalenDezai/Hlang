@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 namespace HlangInterpreter.Expressions
 {
+    /// <summary>
+    /// Represent and execute a lambda expression
+    /// </summary>
     public class Lambda : Expr
     {
         public List<Token> Parameters { get; set; }
