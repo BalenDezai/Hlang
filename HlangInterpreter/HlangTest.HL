@@ -91,7 +91,7 @@ while true then
   if h is equal to 10 then
     print("break reached")
     break
-    print("still came here sucker")
+    print("still came here sucker")*/
 
 
 define function doesNameExist(nameToFind) then
@@ -109,7 +109,7 @@ define function applyToNumlist(fn) then
   for each num in numList then
     num is fn(num)
 
-applyToNumlist(lambda num then num multiply by 5)
+/*applyToNumlist(lambda num then num multiply by 5)
 plusOne is lambda h then h plus 1
 applyToNumlist(plusOne)
 print(numList)*/
@@ -119,4 +119,10 @@ two is incremented one
 incremented one
 print(one)
 print(two)*/
-print(complement of 5.2)
+print(complement of 5)
+print(type of 5)
+print(type of true)
+print(type of "hey")
+print(type of 5.5)
+print(type of [])
+print(type of doesNameExist)

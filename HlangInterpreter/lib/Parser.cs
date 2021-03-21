@@ -407,10 +407,10 @@ namespace HlangInterpreter.Lib
         /// <returns>An unary expression node or an expression node</returns>
         private Expr Unary()
         {
-            if (Match(TokenType.NOT, TokenType.MINUS, TokenType.INCREMENT, TokenType.DECREMENT, TokenType.COMPLEMENT))
+            if (Match(TokenType.NOT, TokenType.MINUS, TokenType.INCREMENT, TokenType.DECREMENT, TokenType.COMPLEMENT, TokenType.TYPE))
             {
                 Token opr = Previous();
-                if (opr.Type == TokenType.COMPLEMENT) Consume(TokenType.OF, "Expected 'of' after 'complement");
+                if (opr.Type == TokenType.COMPLEMENT || opr.Type == TokenType.TYPE) Consume(TokenType.OF, "Expected 'of' after 'complement' or 'type'");
                 Expr right = Unary();
                 return new Unary(opr, right: right);
             }

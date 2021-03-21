@@ -159,7 +159,19 @@ namespace HlangInterpreter.Lib
                 case TokenType.MINUS:
                     CheckNumberOperand(expr.Operator, right);
                     return -(double)right;
-                case TokenType.INCREMENT:
+                case TokenType.TYPE:
+                    switch (right)
+                    {
+                        case int c:  return "integer";
+                        case double c: return "float";
+                        case string s: return "string";
+                        case bool b: return "bool";
+                        case HlangFunction f: return "function";
+                        case HlangList<object> l: return "list";
+                        case null: return "nothing";
+                    }
+                    throw new RuntimeError(expr.Operator, $"undefined type of variable: '{right}'");
+                case TokenType.INCREMENT: 
                     var toIncrement = (Variable)expr.Right;
                     if (Environment.Values.ContainsKey(toIncrement.Name.Lexeme))
                     {

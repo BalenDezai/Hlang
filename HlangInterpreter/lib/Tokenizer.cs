@@ -63,7 +63,7 @@ namespace HlangInterpreter.Lib
                 {"incremented", TokenType.INCREMENT},
                 {"decrement", TokenType.DECREMENT },
                 {"decremented", TokenType.DECREMENT },
-                {"TYPE", TokenType.TYPE },
+                {"type", TokenType.TYPE },
                 {"complement", TokenType.COMPLEMENT },
                 {"of", TokenType.OF }
             };
