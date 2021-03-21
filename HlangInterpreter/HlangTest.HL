@@ -1,4 +1,4 @@
-﻿age is 24
+﻿/*age is 24
 name is "cas"
 if name is equal to "cas" then
   print(true)
@@ -79,7 +79,8 @@ define function returnNumber(n) then
       return n
     else then
       print(number)
-returnNumber(5)
+five is returnNumber(5)
+print("the number is: " plus five)
 
 // test break
 
@@ -90,6 +91,7 @@ while true then
   if h is equal to 10 then
     print("break reached")
     break
+    print("still came here sucker")
 
 
 define function doesNameExist(nameToFind) then
@@ -110,4 +112,11 @@ define function applyToNumlist(fn) then
 applyToNumlist(lambda num then num multiply by 5)
 plusOne is lambda h then h plus 1
 applyToNumlist(plusOne)
-print(numList)
+print(numList)*/
+
+/*one is 1
+two is incremented one
+incremented one
+print(one)
+print(two)*/
+print(complement of 5.2)

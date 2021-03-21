@@ -8,10 +8,11 @@ namespace HlangInterpreter.Expressions
     /// </summary>
     public class Unary : Expr
     {
-        public Unary(Token opr, Expr right)
+        public Unary(Token opr, Expr right = null, Expr left = null)
         {
             Operator = opr;
             Right = right;
+            Left = left;
         }
 
         public override T Accept<T>(IExpressionVisitor<T> visitor)

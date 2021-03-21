@@ -22,7 +22,7 @@ program:= <declaration>*;
 <comparison> := <term> ( <comparisonOperators> <term> )*;
 <term> := <factor> ( <termOperators> <factor> )* ;
 <factor> := <unary> ( <factorizationOperators> <unary> )*;
-<unary> := ( 'not' | 'reverse' )+ <unary> | <primary>;
+<unary> := <unaryOperators>+ <unary> | <primary>;
 <lambda> := 'lambda' <paramters>? 'then' <expression> | <primary>;
 <functionCall> := primary ( '(' arguments ')')*;
 <primary> :=  <object> | "true" | "false" | "nothing" | '(' <expression> ')' | <identifer> ;
@@ -41,6 +41,7 @@ program:= <declaration>*;
 <string> := '"' <letter>+ '"' ;
 
 (* operators*)
+<unaryOperators> := 'not' | '-' | 'increment' | 'incremented' | 'decrement' | 'decremented' | 'complement of' | 'type of' |;
 <equalityOperators> := 'is equal to' | 'is not' ;
 <comparisonOperators> := 'is greater than' | 'is less than'´| 'is equal or greater than' | 'is equal or less than';
 <termOperators> := 'add' | 'plus' | 'subtract' | 'minus';

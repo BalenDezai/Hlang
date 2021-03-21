@@ -10,7 +10,7 @@
         COMA, DOT,
 
         // Unary
-        REVERSE, NOT,
+        NOT, TYPE, COMPLEMENT, INCREMENT, DECREMENT, OF,
 
         // Arithmetic
         SUBTRACT, MINUS, MODULUS, ADD, PLUS,

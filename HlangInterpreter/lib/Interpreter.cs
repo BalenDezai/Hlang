@@ -50,7 +50,6 @@ namespace HlangInterpreter.Lib
         /// Evaluate and assign an expression
         /// </summary>
         /// <param name="expr">Assignment expression to evaluate and assign</param>
-        /// <returns>The evaluated value to assign</returns>
         public object VisitAssignExpr(Assign expr)
         {
             // evaluate the expression
@@ -65,7 +64,7 @@ namespace HlangInterpreter.Lib
             {
                 Environment.Add(expr.Name.Lexeme, value);
             }
-            return value;
+            return null;
         }
         /// <summary>
         /// Evaluate and execute a binary expression
@@ -105,6 +104,10 @@ namespace HlangInterpreter.Lib
                     if (left is string && right is string)
                     {
                         return (string)left + (string)right;
+                    }
+                    if (left is string && right != null)
+                    {
+                        return (string)left + (string)right.ToString();
                     }
                     throw new RuntimeError(expr.Operator, "Operands must be two numbers or two strings");
                 case TokenType.MINUS:
@@ -153,12 +156,33 @@ namespace HlangInterpreter.Lib
             {
                 case TokenType.NOT:
                     return !IsTruthy(right);
-                case TokenType.REVERSE:
+                case TokenType.MINUS:
                     CheckNumberOperand(expr.Operator, right);
                     return -(double)right;
+                case TokenType.INCREMENT:
+                    var toIncrement = (Variable)expr.Right;
+                    if (Environment.Values.ContainsKey(toIncrement.Name.Lexeme))
+                    {
+                        return Environment.Values[toIncrement.Name.Lexeme] = (double)right + 1;
+                    }
+                    throw new RuntimeError(expr.Operator, $"incrementing undefined variable: '{toIncrement.Name.Lexeme}'");
+                case TokenType.DECREMENT:
+                    var toDecrement = (Variable)expr.Right;
+                    if (Environment.Values.ContainsKey(toDecrement.Name.Lexeme))
+                    {
+                        return Environment.Values[toDecrement.Name.Lexeme] = (double)right - 1;
+                    }
+                    throw new RuntimeError(expr.Operator, $"Decrementing undefined variable: '{toDecrement.Name.Lexeme}'");
+                case TokenType.COMPLEMENT:
+                    if (right is double)
+                    {
+                        throw new RuntimeError(expr.Operator, $"Bad operand for unary 'complement of': 'float'");
+                    }
+                    return ~(int)right;
             }
             return null;
         }
+
         /// <summary>
         /// Evaluate the variable expression
         /// </summary>
@@ -181,10 +205,9 @@ namespace HlangInterpreter.Lib
         /// Execute a statement
         /// </summary>
         /// <param name="statement">Statement to execute</param>
-        /// <returns>Execute statement</returns>
-        public object Execute(Statement statement)
+        public void Execute(Statement statement)
         {
-            return statement.Accept(this);
+            statement.Accept(this);
         }
         /// <summary>
         /// Check if an operand is a number
@@ -253,7 +276,6 @@ namespace HlangInterpreter.Lib
         /// Execute an expression stateement
         /// </summary>
         /// <param name="statement">Expression statement to execute</param>
-        /// <returns>Executed expression statement</returns>
         public object VisitExpressionStatement(Expression statement)
         {
             return Evaluate(statement.Expr);
@@ -262,35 +284,32 @@ namespace HlangInterpreter.Lib
         /// Execute an indentation block statement
         /// </summary>
         /// <param name="statement">Indentation block statement to execute</param>
-        /// <returns>Last executed statement in the block</returns>
         public object VisitBlockStatement(Block statement)
         {
-            return ExecuteBlock(statement.Statements, new Environment(Environment));
+            ExecuteBlock(statement.Statements, new Environment(Environment));
+            return null;
         }
         /// <summary>
         /// Execute a block
         /// </summary>
         /// <param name="statements">Block statement to execute</param>
         /// <param name="environment">The environment of the block statement</param>
-        /// <returns>Last executed statement in the block</returns>
-        public object ExecuteBlock(List<Statement> statements, Environment environment)
+        public void ExecuteBlock(List<Statement> statements, Environment environment)
         {
             // store previous environment to resume once block execution is over
             Environment previous = Environment;
-            object value = null;
             try
             {
                 Environment = environment;
                 foreach (var statement in statements)
                 {
-                    value = Execute(statement);
+                    Execute(statement);
                 }
             }
             finally
             {
                 Environment = previous;
             }
-            return value;
         }
         /// <summary>
         /// Execute an if statement
@@ -301,11 +320,11 @@ namespace HlangInterpreter.Lib
             // evalaute the condition expression and it's truthyness
             if (IsTruthy(Evaluate(statement.Condition)))
             {
-                return Execute(statement.ThenBranch);
+                Execute(statement.ThenBranch);
             }
             else if (statement.ElseBranch != null)
             {
-                return Execute(statement.ElseBranch);
+                Execute(statement.ElseBranch);
             }
             return null;
         }
@@ -336,14 +355,17 @@ namespace HlangInterpreter.Lib
         /// <param name="statement">While statement to execute</param>
         public object VisitWhileStatement(While statement)
         {
-            while(IsTruthy(Evaluate(statement.Condition)))
+            try
             {
-                var ret = Execute(statement.Body);
-                if (ret is Break)
+                while (IsTruthy(Evaluate(statement.Condition)))
                 {
-                    break;
+                    Execute(statement.Body);
+
                 }
-                
+            }
+            catch (HlangBreak)
+            {
+                return null;
             }
             return null;
         }
@@ -365,24 +387,28 @@ namespace HlangInterpreter.Lib
         /// Execute a for each statement
         /// </summary>
         /// <param name="statement">For each statement to be executed</param>
-        /// <returns></returns>
         public object VisitForeachStatement(ForEach statement)
         {
             // get the list from the for eeach statement
             var list = (List<object>)Evaluate(statement.List);
-            for (int i = 0; i < list.Count; i++)
+            try
             {
-                // create new environment with old (current) one as parent
-                // add the identiifer to it and execute the block
-                Environment env = new Environment(Environment);
-                env.Add(statement.Identifier.Name.Lexeme, list[i]);
-                if (ExecuteBlock(statement.Block.Statements, env) is Break)
+                for (int i = 0; i < list.Count; i++)
                 {
-                    break;
+                    // create new environment with old (current) one as parent
+                    // add the identiifer to it and execute the block
+                    Environment env = new Environment(Environment);
+                    env.Add(statement.Identifier.Name.Lexeme, list[i]);
+                    ExecuteBlock(statement.Block.Statements, env);
+                    // re-assign the new value if it's changed
+                    list[i] = env.GetValue(statement.Identifier.Name);
                 }
-                // re-assign the new value if it's changed
-                list[i] = env.GetValue(statement.Identifier.Name);
             }
+            catch (HlangBreak)
+            {
+                return null;
+            }
+
             return null;
         }
         /// <summary>
@@ -433,7 +459,7 @@ namespace HlangInterpreter.Lib
         {
             object value = null;
             if (statement.Value != null) value = Evaluate(statement.Value);
-            // wehn met with a retun statement, throw error to be caught by caller
+            // when met with a retun statement, throw error to be caught by caller
             throw new HlangReturn(value);
         }
         /// <summary>
@@ -443,7 +469,7 @@ namespace HlangInterpreter.Lib
         /// <returns>The break statement</returns>
         public object VisitBreakStatement(Break statement)
         {
-            return statement;
+            throw new HlangBreak();
         }
         /// <summary>
         /// Evaluate a lambda expression

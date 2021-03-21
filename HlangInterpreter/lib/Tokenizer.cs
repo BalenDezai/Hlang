@@ -58,7 +58,14 @@ namespace HlangInterpreter.Lib
                 {"to", TokenType.TO },
                 {"in", TokenType.IN },
                 {"break", TokenType.BREAK },
-                {"lambda", TokenType.LAMBDA }
+                {"lambda", TokenType.LAMBDA },
+                {"increment", TokenType.INCREMENT },
+                {"incremented", TokenType.INCREMENT},
+                {"decrement", TokenType.DECREMENT },
+                {"decremented", TokenType.DECREMENT },
+                {"TYPE", TokenType.TYPE },
+                {"complement", TokenType.COMPLEMENT },
+                {"of", TokenType.OF }
             };
 
         }
@@ -95,6 +102,7 @@ namespace HlangInterpreter.Lib
                 case ' ': break;
                 case '(': AddToken(TokenType.LEFT_PAREN); break;
                 case ')': AddToken(TokenType.RIGHT_PAREN); break;
+                case '-': AddToken(TokenType.MINUS); break;
                 case '/': SkipComment(); break;
                 case '[': AddToken(TokenType.LEFT_BRACKET); break;
                 case ']': AddToken(TokenType.RIGHT_BRACKET); break;
@@ -203,19 +211,29 @@ namespace HlangInterpreter.Lib
         /// </summary>
         private void ReadNumber()
         {
+            bool isFloat = false;
             // While the character is a digit, move forward
             while (IsDigit(_scanner.PeekCurrentChar())) _scanner.MoveToNextChar();
 
             // If we hit a period then continue
             if (_scanner.PeekCurrentChar() == '.' && IsDigit(_scanner.PeekNextChar()))
             {
+                isFloat = true;
                 _scanner.MoveToNextChar();
                 while (IsDigit(_scanner.PeekCurrentChar())) _scanner.MoveToNextChar();
             }
 
             // parse the literal and add to a number token
-            var test = _scanner.GetStartToCurrent();
-            AddToken(TokenType.NUMBER, double.Parse(test, CultureInfo.InvariantCulture));
+            var value = _scanner.GetStartToCurrent();
+
+            if (isFloat)
+            {
+                AddToken(TokenType.NUMBER, double.Parse(value, CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                AddToken(TokenType.NUMBER, int.Parse(value, CultureInfo.InvariantCulture));
+            }
         }
 
         /// <summary>
