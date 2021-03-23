@@ -1,4 +1,4 @@
-﻿using HlangInterpreter.TokenEnums;
+﻿using HlangInterpreter.Enums;
 
 namespace HlangInterpreter.Lib
 {

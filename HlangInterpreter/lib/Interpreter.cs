@@ -1,11 +1,11 @@
 ﻿using HlangInterpreter.Expressions;
 using HlangInterpreter.HelperInterfaces;
-using HlangInterpreter.TokenEnums;
 using HlangInterpreter.Errors;
 using System.Collections.Generic;
 using HlangInterpreter.Statements;
 using System;
 using HlangInterpreter.HlangTypes;
+using HlangInterpreter.Enums;
 
 namespace HlangInterpreter.Lib
 {
@@ -76,6 +76,7 @@ namespace HlangInterpreter.Lib
             // evaluate the left and the right side
             object left = Evaluate(expr.Left);
             object right = Evaluate(expr.Right);
+            
             switch (expr.Operator.Type)
             {
                 case TokenType.NOT:
@@ -94,7 +95,6 @@ namespace HlangInterpreter.Lib
                 case TokenType.GREATER:
                     CheckNumberOperands(expr.Operator, left, right);
                     return (double)left > (double)right;
-                // be sure to handle string concatination too
                 case TokenType.PLUS:
                 case TokenType.ADD:
                     if (left is double  && right is double)
@@ -162,8 +162,7 @@ namespace HlangInterpreter.Lib
                 case TokenType.TYPE:
                     switch (right)
                     {
-                        case int c:  return "integer";
-                        case double c: return "float";
+                        case double c: return "number";
                         case string s: return "string";
                         case bool b: return "bool";
                         case HlangFunction f: return "function";
@@ -186,11 +185,7 @@ namespace HlangInterpreter.Lib
                     }
                     throw new RuntimeError(expr.Operator, $"Decrementing undefined variable: '{toDecrement.Name.Lexeme}'");
                 case TokenType.COMPLEMENT:
-                    if (right is double)
-                    {
-                        throw new RuntimeError(expr.Operator, $"Bad operand for unary 'complement of': 'float'");
-                    }
-                    return ~(int)right;
+                    return ~Convert.ToInt32(right);
             }
             return null;
         }

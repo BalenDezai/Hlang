@@ -17,5 +17,15 @@ namespace HlangInterpreter.Errors
         {
             Console.WriteLine($"[line {line}] Error at '{where}': {message}");
         }
+
+        public void ReportError(string where, string message)
+        {
+            Console.WriteLine($"Error at '{where}': {message}");
+        }
+
+        public void ReportError(int line, string message)
+        {
+            Console.WriteLine($"[line {line}] : {message}");
+        }
     }
 }

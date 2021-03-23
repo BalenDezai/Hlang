@@ -53,11 +53,21 @@ namespace HlangInterpreter.Lib
             try
             {
                 List<Statement> statements = parser.Parse(tokenizer.GetTokens());
+                SemanticAnalyzer sa = new SemanticAnalyzer(_interpreter);
+                sa.Analyze(statements);
                 _interpreter.Interpret(statements);
             }
             catch (SyntaxError err)
             {
-                _errorReporting.ReportError(err.Line, "", err.Message);
+                _errorReporting.ReportError(err.Line,  err.Message);
+            }
+            catch (SemanticError err)
+            {
+                _errorReporting.ReportError(err.Line, err.Token.Lexeme, err.Message);
+            }
+            catch (RuntimeError err)
+            {
+                _errorReporting.ReportError(err.Token.Lexeme, err.Message);
             }
         }
 

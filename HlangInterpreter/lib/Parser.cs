@@ -1,4 +1,4 @@
-﻿using HlangInterpreter.TokenEnums;
+﻿using HlangInterpreter.Enums;
 using System.Collections.Generic;
 using HlangInterpreter.Expressions;
 using HlangInterpreter.Errors;
@@ -15,10 +15,12 @@ namespace HlangInterpreter.Lib
         private List<Token> _tokens;
         private int _current = 0;
         private readonly ErrorReporting _errorReporting;
+        private FunctionType _currentFuncType;
 
         public Parser(ErrorReporting errorReporting)
         {
             _errorReporting = errorReporting;
+            _currentFuncType = FunctionType.NONE;
         }
         /// <summary>
         /// Parses the tokens into executable expressions and statements
@@ -60,6 +62,11 @@ namespace HlangInterpreter.Lib
         /// <returns>A function node</returns>
         private Function FunctionStatement()
         {
+            // flag that we are in a function declaration
+            FunctionType funcStatus = _currentFuncType;
+            _currentFuncType = FunctionType.FUNCITON;
+
+
             // syntactic check and get the function name
             Consume(TokenType.FUNCTION, "Expect 'function' after 'define'");
             Token name = Consume(TokenType.IDENTIFER, "Expect function name");
@@ -83,7 +90,8 @@ namespace HlangInterpreter.Lib
             Consume(TokenType.RIGHT_PAREN, "Expect ')' after paramters");
             Consume(TokenType.THEN, "Expected 'then' after function declaration");
             List<Statement> body = Block();
-
+            // change flag back
+            _currentFuncType = funcStatus;
             return new Function(name, paramters, body);
         }
 
@@ -187,6 +195,11 @@ namespace HlangInterpreter.Lib
         /// <returns>A 'return' statement node</returns>
         private Statement ReturnStatement()
         {
+            // if used outside of a function, throw syntax error
+            if (_currentFuncType != FunctionType.FUNCITON)
+            {
+                throw new SyntaxError(Peek().Line, "'return' outside of function");
+            }
             Expr value = null;
             // check if a value is returned or its void
             if (!Check(TokenType.DEDENT))

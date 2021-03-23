@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
 using HlangInterpreter.Errors;
-using HlangInterpreter.TokenEnums;
+using HlangInterpreter.Enums;
 
 namespace HlangInterpreter.Lib
 {
@@ -211,14 +211,12 @@ namespace HlangInterpreter.Lib
         /// </summary>
         private void ReadNumber()
         {
-            bool isFloat = false;
             // While the character is a digit, move forward
             while (IsDigit(_scanner.PeekCurrentChar())) _scanner.MoveToNextChar();
 
             // If we hit a period then continue
             if (_scanner.PeekCurrentChar() == '.' && IsDigit(_scanner.PeekNextChar()))
             {
-                isFloat = true;
                 _scanner.MoveToNextChar();
                 while (IsDigit(_scanner.PeekCurrentChar())) _scanner.MoveToNextChar();
             }
@@ -226,14 +224,7 @@ namespace HlangInterpreter.Lib
             // parse the literal and add to a number token
             var value = _scanner.GetStartToCurrent();
 
-            if (isFloat)
-            {
-                AddToken(TokenType.NUMBER, double.Parse(value, CultureInfo.InvariantCulture));
-            }
-            else
-            {
-                AddToken(TokenType.NUMBER, int.Parse(value, CultureInfo.InvariantCulture));
-            }
+            AddToken(TokenType.NUMBER, double.Parse(value, CultureInfo.InvariantCulture));
         }
 
         /// <summary>

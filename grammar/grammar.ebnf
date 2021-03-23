@@ -1,7 +1,7 @@
 program:= <declaration>*;
 
 (* declaration*)
-<declaration> := functionDeclaration | assignment | <statement>;
+<declaration> := functionDeclaration | <expression> | <statement>;
 <functionDeclaration> := 'define function' <function>;
 
 (* statements*)
@@ -41,7 +41,7 @@ program:= <declaration>*;
 <string> := '"' <letter>+ '"' ;
 
 (* operators*)
-<unaryOperators> := 'not' | '-' | 'increment' | 'incremented' | 'decrement' | 'decremented' | 'complement of' | 'type of' |;
+<unaryOperators> := 'not' | '-' | 'increment' | 'incremented' | 'decrement' | 'decremented' | ( 'complement' | 'type' ) 'of';
 <equalityOperators> := 'is equal to' | 'is not' ;
 <comparisonOperators> := 'is greater than' | 'is less than'´| 'is equal or greater than' | 'is equal or less than';
 <termOperators> := 'add' | 'plus' | 'subtract' | 'minus';

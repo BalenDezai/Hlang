@@ -1,4 +1,4 @@
-﻿namespace HlangInterpreter.TokenEnums
+﻿namespace HlangInterpreter.Enums
 {
     public enum TokenType
     {
