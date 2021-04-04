@@ -1,9 +1,11 @@
 ﻿using HlangInterpreter.Enums;
+using HlangInterpreter.Errors;
 using HlangInterpreter.Expressions;
 using HlangInterpreter.HelperInterfaces;
 using HlangInterpreter.Statements;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HlangInterpreter.Lib
 {
@@ -13,18 +15,16 @@ namespace HlangInterpreter.Lib
     /// </summary>
     public class SemanticAnalyzer : IExpressionVisitor<object>, IStatementVisitor<object>
     {
-        private readonly Stack<Dictionary<string, bool>> _scopes;
-        private readonly Interpreter _interpreter;
+        private readonly Stack<Dictionary<string, object>> _scopes;
         private FunctionType _currentFuncType;
         private readonly Stack<CallingBody> _callingBodyStack;
 
-        public SemanticAnalyzer(Interpreter interpreter)
+        public SemanticAnalyzer()
         {
-            _interpreter = interpreter;
             _callingBodyStack = new Stack<CallingBody>();
             _callingBodyStack.Push(CallingBody.NONE);
-            _scopes = new Stack<Dictionary<string, bool>>();
-            _scopes.Push(new Dictionary<string, bool>());
+            _scopes = new Stack<Dictionary<string, object>>();
+            _scopes.Push(new Dictionary<string, object>());
             _currentFuncType = FunctionType.NONE;
         }
 
@@ -48,7 +48,8 @@ namespace HlangInterpreter.Lib
 
         public object VisitAssignExpr(Assign expr)
         {
-            Resolve(expr.Value);
+            var value = Resolve(expr.Value);
+            Define(expr.Name, value);
             return null;
         }
 
@@ -104,7 +105,7 @@ namespace HlangInterpreter.Lib
 
         public object visitFunctionStatement(Function statement)
         {
-            Define(statement.Name);
+            Define(statement.Name, statement);
             ResolveFunction(statement, FunctionType.FUNCITON, CallingBody.FUNCTION);
             return null;
         }
@@ -159,6 +160,7 @@ namespace HlangInterpreter.Lib
 
         public object VisitReturnStatement(Return statement)
         {
+            if (_currentFuncType == FunctionType.INIT) throw new SemanticError(statement.Keyword, "Can't 'return' inside of an initializer");
             if (statement.Value != null)
             {
                 Resolve(statement.Value);
@@ -184,7 +186,7 @@ namespace HlangInterpreter.Lib
         {
             if (!_scopes.Peek().ContainsKey(expr.Name.Lexeme))
             {
-                Define(expr.Name);
+                return GetValue(expr.Name);
             }
             foreach (var item in _scopes)
             {
@@ -205,18 +207,31 @@ namespace HlangInterpreter.Lib
             return null;
         }
 
-        private void Define(Token name)
+        private void Define(Token name, object value)
         {
             if (_scopes.Count == 0) return;
             if (!_scopes.Peek().ContainsKey(name.Lexeme))
             {
-                _scopes.Peek().Add(name.Lexeme, false);
+                _scopes.Peek().Add(name.Lexeme, value);
             }
+            else
+            {
+                _scopes.Peek()[name.Lexeme] = value;
+            }
+        }
+
+        private object GetValue(Token name)
+        {
+            if (_scopes.Peek().ContainsKey(name.Lexeme))
+            {
+                return _scopes.Peek()[name.Lexeme];
+            }
+            return null;
         }
 
         private void BeginSCope()
         {
-            _scopes.Push(new Dictionary<string, bool>());
+            _scopes.Push(new Dictionary<string, object>());
         }
 
         private void EndScope()
@@ -226,18 +241,91 @@ namespace HlangInterpreter.Lib
 
         private void ResolveFunction(Function statement, FunctionType type, CallingBody callingBody)
         {
+            if (type ==  FunctionType.INIT && _callingBodyStack.Peek() == CallingBody.SUBCLASS)
+            {
+                Expr first = ((Expression)statement.Body.First()).Expr;
+                if (!(first is FunctionCall)) throw new SemanticError(statement.Name, "First expression in an initializer must be a inherited initializer call");
+                Variable firstCallee = ((Variable)((FunctionCall)first).Callee);
+                if (firstCallee.Name.Lexeme != "parent") throw new SemanticError(firstCallee.Name, "First expression in an initializer must be a inherited initializer call");
+            }
             FunctionType enclosing = _currentFuncType;
             _callingBodyStack.Push(callingBody);
             _currentFuncType = type;
             BeginSCope();
             foreach (var parameter in statement.Paramters)
             {
-                Define(parameter);
+                Define(parameter, true);
             }
             Analyze(statement.Body);
             EndScope();
             _currentFuncType = enclosing;
             _callingBodyStack.Pop();
+        }
+
+        public object VisitClassSTatement(Class statement)
+        {
+            _callingBodyStack.Push(CallingBody.CLASS);
+            if (statement.ParentClass != null)
+            {
+
+                if (statement.Name.Lexeme == statement.ParentClass.Name.Lexeme)
+                {
+                    throw new SemanticError(statement.Name, "Class can't inherit from itself");
+                }
+                _callingBodyStack.Push(CallingBody.SUBCLASS);
+                Resolve(statement.ParentClass);
+            }
+
+            if (statement.ParentClass != null)
+            {
+                BeginSCope();
+                _scopes.Peek().Add("parent", statement.ParentClass);
+            }
+
+            BeginSCope();
+            _scopes.Peek().Add("this", statement);
+            foreach (Function method in statement.Methods)
+            {
+                if (method.Name.Lexeme == statement.Name.Lexeme)
+                {
+                    ResolveFunction(method, FunctionType.INIT, CallingBody.FUNCTION);
+                }
+                else
+                {
+                    ResolveFunction(method, FunctionType.METHOD, CallingBody.FUNCTION);
+                }
+            }
+
+            if (statement.ParentClass != null)
+            {
+                EndScope();
+            }
+
+            EndScope();
+            _callingBodyStack.Pop();
+            return null;
+        }
+
+        public object VisitGetPropertyExpr(GetProperty expr)
+        { 
+            Resolve(expr.Object);
+            return null;
+        }
+
+        public object VisitSetPropertyExpr(SetProperty expr)
+        {
+            Resolve(expr.Value);
+            Resolve(expr.Object);
+            return null;
+        }
+
+        public object VisitThisExpr(This expr)
+        {
+            if (_callingBodyStack.Contains(CallingBody.CLASS) && _callingBodyStack.Contains(CallingBody.FUNCTION))
+            {
+                return null;
+            }
+            throw new SemanticError(expr.Keyword, "'this' must be used inside of a class");
         }
     }
 }

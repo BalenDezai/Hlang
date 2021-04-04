@@ -2,6 +2,6 @@
 {
     public enum CallingBody
     {
-        FUNCTION, WHILE, FOR_EACH, NONE
+        CLASS, SUBCLASS, FUNCTION, WHILE, FOR_EACH, NONE
     }
 }

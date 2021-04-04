@@ -18,5 +18,8 @@ namespace HlangInterpreter.HelperInterfaces
         T VisitListExpr(List expr);
         T VisitFunctionCallExpr(FunctionCall expr);
         T VisitLambdaExpr(Lambda expr);
+        T VisitGetPropertyExpr(GetProperty expr);
+        T VisitSetPropertyExpr(SetProperty expr);
+        T VisitThisExpr(This expr);
     }
 }

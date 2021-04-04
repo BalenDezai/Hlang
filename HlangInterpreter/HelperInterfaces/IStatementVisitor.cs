@@ -17,5 +17,6 @@ namespace HlangInterpreter.HelperInterfaces
         T visitFunctionStatement(Function statement);
         T VisitReturnStatement(Return statement);
         T VisitBreakStatement(Break statement);
+        T VisitClassSTatement(Class statement);
     }
 }

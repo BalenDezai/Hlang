@@ -124,3 +124,30 @@ print(type of "hey")
 print(type of 5.5)
 print(type of [])
 print(type of doesNameExist)
+
+define class Person then
+  define function Person(age, name) then
+    this.age is age
+    this.name is name
+  define function printPerson() then
+    print("my name is " plus this.name plus " and I'm " plus this.age plus " years old")
+
+john is Person(45, "john")
+john.printPerson()
+
+
+define class Ping then
+
+print(Ping)
+
+ping is Ping()
+print(ping)
+
+define class Jane extends Person then
+  define function Jane(hairColor, name, age) then
+    parent(age, name)
+    this.hairColor is hairColor
+  define function PrintJane() then
+    print("name: " plus this.name plus " age: " plus this.age plus " hair color: " plus this.hairColor)
+jane is Jane("brown", "Jane", 40)
+jane.PrintJane()

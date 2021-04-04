@@ -12,10 +12,9 @@ namespace HlangInterpreter.HlangTypes
     {
 
         public int ArgumentLength { get; set; }
+        public Environment _closure;
+        public Function _funcDeclaration;
 
-        private Environment _closure;
-
-        private Function _funcDeclaration;
         public HlangFunction(Function funcDeclaration, Environment closure)
         {
             _closure = closure;
@@ -48,6 +47,17 @@ namespace HlangInterpreter.HlangTypes
                 return value.Value;
             }
             return null;
+        }
+        /// <summary>
+        /// Bind the instance of the class to the scope of the function under the keyword "this"
+        /// </summary>
+        /// <param name="instance">Instance of class</param>
+        /// <returns>The function with "this" binded</returns>
+        public HlangFunction Bind(HlangClass instance)
+        {
+            Environment env = new Environment(_closure);
+            env.Add("this", instance);
+            return new HlangFunction(_funcDeclaration, env);
         }
 
         public override string ToString()

@@ -1,5 +1,6 @@
 ﻿using HlangInterpreter.Expressions;
 using HlangInterpreter.HelperInterfaces;
+using HlangInterpreter.Lib;
 
 namespace HlangInterpreter.Statements
 {
@@ -9,9 +10,10 @@ namespace HlangInterpreter.Statements
     public class Return : Statement
     {
         public Expr Value { get; set; }
-
-        public Return(Expr value)
+        public Token Keyword { get; set; }
+        public Return(Token keyword, Expr value)
         {
+            Keyword = keyword;
             Value = value;
         }
         public override T Accept<T>(IStatementVisitor<T> visitor)

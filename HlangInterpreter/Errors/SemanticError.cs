@@ -10,10 +10,10 @@ namespace HlangInterpreter.Errors
     {
         public Token Token { get; set; }
         public int Line { get; set; }
-        public SemanticError(Token token, int line, string message) : base (message)
+        public SemanticError(Token token, string message) : base (message)
         {
             Token = token;
-            Line = line;
+            Line = token.Line;
         }
     }
 }

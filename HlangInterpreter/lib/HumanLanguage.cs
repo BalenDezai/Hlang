@@ -53,7 +53,7 @@ namespace HlangInterpreter.Lib
             try
             {
                 List<Statement> statements = parser.Parse(tokenizer.GetTokens());
-                SemanticAnalyzer sa = new SemanticAnalyzer(_interpreter);
+                SemanticAnalyzer sa = new SemanticAnalyzer();
                 sa.Analyze(statements);
                 _interpreter.Interpret(statements);
             }

@@ -2,6 +2,6 @@
 {
     public enum FunctionType
     {
-        NONE, FUNCITON, METHOD
+        NONE, FUNCITON, METHOD, INIT
     }
 }

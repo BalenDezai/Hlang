@@ -1,21 +1,22 @@
 program:= <declaration>*;
 
 (* declaration*)
-<declaration> := functionDeclaration | <expression> | <statement>;
+<declaration> := functionDeclaration | <classDeclaration> | <statement>;
 <functionDeclaration> := 'define function' <function>;
+<classDeclaration> := 'define class' <identifer> ( 'extends' <identifer )? 'then' NEWLINE INDENT <function>* DEDENT;
 
 (* statements*)
 <statement> := <expression> | <ifStatement> | <forStatement> | returnStatement | <expression> | <whileStatement> | block;
 <while> := 'while' <expression> 'then' <block>;
 <ifStatement> := 'if' <expression> 'then' <block>  ('else then' statement)?;
 <forStatement> := 'for' <identifier> 'in' <list> <block> ;
-<block> := NEWLINE INDENT <statement> DEDENT;
+<block> := NEWLINE INDENT <statement>* DEDENT;
 <returnStatement> := 'return' <expression>?;
 <breakStatement> := 'break';
 
 (* expressions*)
 <expression> := <assignment>;
-<assignment> := <identifer> 'is' <assignment> | <logicOr>;
+<assignment> := ( <call> '.' )? <identifer> 'is' <assignment> | <logicOr>;
 <logicOr> :=  <logicAnd> ('or' <logicAnd>)*;
 <logicAnd> := <equality> ('and' equality)*;
 <equality> := <comparison> (<equalityOperators> comparison)*;
@@ -24,7 +25,7 @@ program:= <declaration>*;
 <factor> := <unary> ( <factorizationOperators> <unary> )*;
 <unary> := <unaryOperators>+ <unary> | <primary>;
 <lambda> := 'lambda' <paramters>? 'then' <expression> | <primary>;
-<functionCall> := primary ( '(' arguments ')')*;
+<call> := primary ( '(' arguments ')' | '.' <identifer> )*;
 <primary> :=  <object> | "true" | "false" | "nothing" | '(' <expression> ')' | <identifer> ;
 
 

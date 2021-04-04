@@ -487,5 +487,64 @@ namespace HlangInterpreter.Lib
         {
             return new HlangLambda(expr);
         }
+
+        public object VisitClassSTatement(Class statement)
+        {
+            HlangClass parentClass = null;
+            HlangClass newClass = new HlangClass(statement.Name.Lexeme);
+            if (statement.ParentClass != null)
+            {
+                parentClass = (HlangClass)Evaluate(statement.ParentClass);
+                if (!(parentClass is HlangClass))
+                {
+                    throw new RuntimeError(statement.ParentClass.Name, "Must inherit from a class");
+                }
+                Environment = new Environment(Environment);
+                Environment.Add("parent", parentClass.GetMethod(parentClass.Name));
+            }
+
+            Dictionary<string, HlangFunction> methods = new Dictionary<string, HlangFunction>();
+            foreach (Function method in statement.Methods)
+            {
+                HlangFunction func = new HlangFunction(method, Environment);
+                methods.Add(method.Name.Lexeme, func.Bind(newClass));
+            }
+
+            if (parentClass != null)
+            {
+                Environment = Environment.Parent;
+            }
+            newClass.ParentClass = parentClass;
+            newClass.Methods = methods;
+            Environment.Add(statement.Name.Lexeme, newClass);
+            return null;
+        }
+
+        public object VisitGetPropertyExpr(GetProperty expr)
+        {
+            object obj = Evaluate(expr.Object);
+            if (obj is HlangClass)
+            {
+                return ((HlangClass)obj).Get(expr.Name);
+            }
+            throw new RuntimeError(expr.Name, "Object is not a class and does not have a property");
+        }
+
+        public object VisitSetPropertyExpr(SetProperty expr)
+        {
+            object obj = Evaluate(expr.Object);
+            if (!(obj is HlangClass))
+            {
+                throw new RuntimeError(expr.Name, "Only class objects have fields");
+            }
+            object value = Evaluate(expr.Value);
+            ((HlangClass)obj).Set(expr.Name, value);
+            return value;
+        }
+
+        public object VisitThisExpr(This expr)
+        {
+            return Environment.GetValue(expr.Keyword);
+        }
     }
 }

@@ -31,6 +31,7 @@ namespace HlangInterpreter.Lib
                 {"false", TokenType.FALSE},
                 {"true", TokenType.TRUE},
                 {"function", TokenType.FUNCTION },
+                {"class", TokenType.CLASS},
                 {"for", TokenType.FOR },
                 {"each", TokenType.EACH},
                 {"if", TokenType.IF },
@@ -53,8 +54,10 @@ namespace HlangInterpreter.Lib
                 {"less", TokenType.LESS},
                 {"than", TokenType.THAN },
                 {"then", TokenType.THEN },
-                {"or", TokenType.OR },
+                {"this", TokenType.THIS },
+                {"extends", TokenType.EXTENDS },
                 {"define", TokenType.DEFINE },
+                {"static", TokenType.STATIC },
                 {"to", TokenType.TO },
                 {"in", TokenType.IN },
                 {"break", TokenType.BREAK },
@@ -63,6 +66,7 @@ namespace HlangInterpreter.Lib
                 {"incremented", TokenType.INCREMENT},
                 {"decrement", TokenType.DECREMENT },
                 {"decremented", TokenType.DECREMENT },
+                {"or", TokenType.OR },
                 {"type", TokenType.TYPE },
                 {"complement", TokenType.COMPLEMENT },
                 {"of", TokenType.OF }
@@ -107,10 +111,11 @@ namespace HlangInterpreter.Lib
                 case '[': AddToken(TokenType.LEFT_BRACKET); break;
                 case ']': AddToken(TokenType.RIGHT_BRACKET); break;
                 case ',': AddToken(TokenType.COMA); break;
+                case '.': AddToken(TokenType.DOT); break;
                 case '\r': break;
                 case '\n':
                     _scanner.IsAbol = true;
-                    _scanner.Line++;  
+                    _scanner.Line++;
                     break;
                 case '"': ReadString(); break;
                 default:

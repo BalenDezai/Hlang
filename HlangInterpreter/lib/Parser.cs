@@ -45,7 +45,12 @@ namespace HlangInterpreter.Lib
         {
             try
             {
-                if (Match(TokenType.DEFINE)) return FunctionStatement();
+                if (Match(TokenType.DEFINE))
+                {
+
+                    if (Match(TokenType.FUNCTION)) return FunctionDeclaration();
+                    if (Match(TokenType.CLASS)) return ClassDeclaration();
+                }
                 return Statement();
             }
             catch (ParsingError err)
@@ -56,19 +61,46 @@ namespace HlangInterpreter.Lib
             }
             
         }
+
+        private Statement ClassDeclaration()
+        {
+            Token className = Consume(TokenType.IDENTIFER, "Expect a class name after 'define class'");
+            Variable parentClass = null;
+            if (Match(TokenType.EXTENDS))
+            {
+                Consume(TokenType.IDENTIFER, "Expected parentClass name");
+                parentClass = new Variable(Previous());
+            }
+            Consume(TokenType.THEN, "Expected 'then' after class declaration");
+            bool classHasBody = Peek().Type == TokenType.INDENT;
+            List<Function> methods = new List<Function>();
+
+            if (classHasBody)
+            {
+                Consume(TokenType.INDENT, "");
+                while (!Check(TokenType.DEDENT) && !IsAtEnd())
+                {
+                    if (Match(TokenType.DEFINE))
+                    {
+                        if (Match(TokenType.FUNCTION)) methods.Add(FunctionDeclaration());
+                    }
+                }
+                Consume(TokenType.DEDENT, "Expected dedentation after class body");
+            }
+
+            return new Class(methods, className, parentClass);
+        }
+
         /// <summary>
-        /// Parses a 'define function' statement
+        /// Parses a function declaration
         /// </summary>
         /// <returns>A function node</returns>
-        private Function FunctionStatement()
+        private Function FunctionDeclaration()
         {
             // flag that we are in a function declaration
             FunctionType funcStatus = _currentFuncType;
             _currentFuncType = FunctionType.FUNCITON;
 
-
-            // syntactic check and get the function name
-            Consume(TokenType.FUNCTION, "Expect 'function' after 'define'");
             Token name = Consume(TokenType.IDENTIFER, "Expect function name");
             Consume(TokenType.LEFT_PAREN, "Expected '(' after function name");
 
@@ -107,7 +139,7 @@ namespace HlangInterpreter.Lib
             if (Match(TokenType.FOR)) return ForStatement();
             if (Check(TokenType.INDENT)) return new Block(Block());
             if (Match(TokenType.RETURN)) return ReturnStatement();
-            if (Match(TokenType.BREAK)) return BreakStatement();
+            if (Match(TokenType.BREAK)) return new Break(Previous()); 
             return ExpressionStatement();
         }
 
@@ -201,21 +233,13 @@ namespace HlangInterpreter.Lib
                 throw new SyntaxError(Peek().Line, "'return' outside of function");
             }
             Expr value = null;
+            Token keyword = Previous();
             // check if a value is returned or its void
             if (!Check(TokenType.DEDENT))
             {
                 value = Expression();
             }
-            return new Return(value);
-        }
-
-        /// <summary>
-        /// Parse a 'break' statement
-        /// </summary>
-        /// <returns>A 'break' statement node</returns>
-        private Statement BreakStatement()
-        {
-            return new Break(Previous());
+            return new Return(keyword, value);
         }
 
         /// <summary>
@@ -255,19 +279,28 @@ namespace HlangInterpreter.Lib
         {
             Expr expr = Or();
 
-            if (Check(TokenType.IS))
+            if (Match(TokenType.IS))
             {
                 // If it's not an assignment, parse equality instead
                 if (MatchNext(TokenType.EQUAL, TokenType.NOT)) return Equality();
 
                 // get the variable identifier
-                Token Name = Previous();
-                
-                Advance();
-                // recursively get the expression to assign
-                Expr init = Assignment();
+                //Token Name = Previous();
 
-                return new Assign(Name, init);
+                // recursively get the expression to assign
+                Expr value = Assignment();
+                if (expr is Variable)
+                {
+                    Token name = ((Variable)expr).Name;
+                    return new Assign(name, value);
+                } 
+                else if (expr is GetProperty)
+                {
+                    GetProperty get = (GetProperty)expr;
+                    return new SetProperty(get.Object, get.Name, value);
+                }
+
+                throw new ParsingError(Previous(), "Assignment target is invalid");
             }
             
             return expr;
@@ -455,18 +488,30 @@ namespace HlangInterpreter.Lib
                 Expr body = Expression();
                 return new Lambda(paramters, body);
             }
-            return FunctionCall();
+            return Call();
         }
         /// <summary>
         /// Parse a function call expression
         /// </summary>
-        /// <returns>A function call expression node or an expression node</returns>
-        private Expr FunctionCall()
+        /// <returns>A function call expression node, an expression node or a property expression node</returns>
+        private Expr Call()
         {
             Expr expr = Primary();
-            if (Match(TokenType.LEFT_PAREN))
+            while (true)
             {
-                expr = FinishFunctionCall(expr);
+                if (Match(TokenType.LEFT_PAREN))
+                {
+                    expr = FinishFunctionCall(expr);
+                }
+                else if (Match(TokenType.DOT))
+                {
+                    Token name = Consume(TokenType.IDENTIFER, "Expected a property name after '.'");
+                    expr = new GetProperty(expr, name);
+                }
+                else
+                {
+                    break;
+                }
             }
             return expr;
         }
@@ -513,6 +558,8 @@ namespace HlangInterpreter.Lib
                 }
                 return new List(values);
             }
+
+            if (Match(TokenType.THIS)) return new This(Previous());
 
             throw new ParsingError(Peek(), "Expected an expression");
         }
