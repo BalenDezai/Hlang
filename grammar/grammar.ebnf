@@ -26,7 +26,7 @@ program:= <declaration>*;
 <unary> := <unaryOperators>+ <unary> | <primary>;
 <lambda> := 'lambda' <paramters>? 'then' <expression> | <primary>;
 <call> := primary ( '(' arguments ')' | '.' <identifer> )*;
-<primary> :=  <object> | "true" | "false" | "nothing" | '(' <expression> ')' | <identifer> | '[' <primary>* ']' | 'this' | 'parent' '(' <arguments>* ')' ;
+<primary> :=  <object> | "nothing" | '(' <expression> ')' | 'this' | 'parent' '(' <arguments>* ')' ;
 
 
 (* Function *)
@@ -35,11 +35,12 @@ program:= <declaration>*;
 <arguments> := expression (',' expression)*;
 
 (*types*)
-<object> := <number> | <string> | <list>;
+<object> := <number> | <string> | <list> | boolean ;
 <list> := '[' object? (',' object)* ']';
 <identifier> := '_'? <letter> ( <letter> | <digit>  )* ;
-<number> :=  '-'? <digit>+ ('.' <digit>+)*;
+<number> :=  '-'? <digit>+ ('.' <digit>+)* ;
 <string> := '"' <letter>+ '"' ;
+<boolean> := 'true' | 'false' ;
 
 (* operators*)
 <unaryOperators> := 'not' | '-' | 'increment' | 'incremented' | 'decrement' | 'decremented' | ( 'complement' | 'type' ) 'of';
