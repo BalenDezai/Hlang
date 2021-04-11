@@ -6,6 +6,7 @@ using HlangInterpreter.Statements;
 using System;
 using HlangInterpreter.HlangTypes;
 using HlangInterpreter.Enums;
+using HlangInterpreter.HlangTypes.HlangClassHelpers;
 
 namespace HlangInterpreter.Lib
 {
@@ -425,6 +426,7 @@ namespace HlangInterpreter.Lib
         /// <returns></returns>
         public object VisitFunctionCallExpr(FunctionCall expr)
         {
+            
             // get the called function
             object callee = Evaluate(expr.Callee);
             // evaluate the passed arguments
@@ -436,14 +438,14 @@ namespace HlangInterpreter.Lib
 
             if (!(callee is ICallable))
             {
-                throw new RuntimeError(expr.Paren, "Only functions are callable");
+                throw new RuntimeError(expr.Keyword, "Only functions are callable");
             }
 
             ICallable function = (ICallable)callee;
             // if the passed arguments are less than or exceep function argument length
             if (arguments.Count != function.ArgumentLength)
             {
-                throw new RuntimeError(expr.Paren, $"Expected {function.ArgumentLength} arguments but got {arguments.Count}");
+                throw new RuntimeError(expr.Keyword, $"Expected {function.ArgumentLength} arguments but got {arguments.Count}");
             }
             // call the function
             return function.Call(this, arguments);
@@ -490,32 +492,45 @@ namespace HlangInterpreter.Lib
 
         public object VisitClassSTatement(Class statement)
         {
-            HlangClass parentClass = null;
-            HlangClass newClass = new HlangClass(statement.Name.Lexeme);
+            HlangClassDeclaration parentClass = null;
+            HlangClassDeclaration newClass = new HlangClassDeclaration(statement.Name.Lexeme);
             if (statement.ParentClass != null)
             {
-                parentClass = (HlangClass)Evaluate(statement.ParentClass);
-                if (!(parentClass is HlangClass))
+                parentClass = (HlangClassDeclaration)Evaluate(statement.ParentClass);
+                if (!(parentClass is HlangClassDeclaration))
                 {
                     throw new RuntimeError(statement.ParentClass.Name, "Must inherit from a class");
                 }
-                Environment = new Environment(Environment);
-                Environment.Add("parent", parentClass.GetMethod(parentClass.Name));
+                newClass.ClassEnv.Add("parent", parentClass);
             }
-
-            Dictionary<string, HlangFunction> methods = new Dictionary<string, HlangFunction>();
+          
             foreach (Function method in statement.Methods)
             {
-                HlangFunction func = new HlangFunction(method, Environment);
-                methods.Add(method.Name.Lexeme, func.Bind(newClass));
+                if (method.IsStatic)
+                {
+                    HlangFunction staticFunc = new HlangFunction(method, newClass.ClassEnv);
+                    newClass.ClassEnv.Add(method.Name.Lexeme, staticFunc);
+                }
+                else
+                {
+                    HlangFunction func = new HlangFunction(method, newClass.ClassEnv);
+                    newClass.Methods.Add(method.Name.Lexeme, func);
+                }
             }
 
-            if (parentClass != null)
+            foreach (Assign assignment in statement.Fields)
             {
-                Environment = Environment.Parent;
+                if (assignment.IsStatic)
+                {
+                    newClass.ClassEnv.Add(assignment.Name.Lexeme, Evaluate(assignment.Value));
+                }
+                else
+                {
+                    newClass.Fields.Add(assignment.Name.Lexeme, Evaluate(assignment.Value));
+                }
             }
+
             newClass.ParentClass = parentClass;
-            newClass.Methods = methods;
             Environment.Add(statement.Name.Lexeme, newClass);
             return null;
         }
@@ -545,6 +560,21 @@ namespace HlangInterpreter.Lib
         public object VisitThisExpr(This expr)
         {
             return Environment.GetValue(expr.Keyword);
+        }
+
+        public object VisitParentExpr(Parent expr)
+        {
+            var parent = (HlangClassDeclaration)Environment.GetValue(expr.Keyword);
+
+            List<object> arguments = new List<object>();
+            foreach (Expr argument in expr.Arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+            var initiatlizedFunc = parent.Call(this, arguments);
+            var instance = (HlangClassInstance)Environment.Parent.Values["this"];
+            instance.ParentClass = (HlangClassInstance)initiatlizedFunc;
+            return null;
         }
     }
 }

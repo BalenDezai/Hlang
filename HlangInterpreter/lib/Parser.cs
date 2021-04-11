@@ -74,7 +74,8 @@ namespace HlangInterpreter.Lib
             Consume(TokenType.THEN, "Expected 'then' after class declaration");
             bool classHasBody = Peek().Type == TokenType.INDENT;
             List<Function> methods = new List<Function>();
-
+            List<Assign> fields = new List<Assign>();
+            bool isStatic = false;
             if (classHasBody)
             {
                 Consume(TokenType.INDENT, "");
@@ -82,13 +83,31 @@ namespace HlangInterpreter.Lib
                 {
                     if (Match(TokenType.DEFINE))
                     {
-                        if (Match(TokenType.FUNCTION)) methods.Add(FunctionDeclaration());
+                        isStatic = Match(TokenType.STATIC) ? true : false;
+                        if (Match(TokenType.FUNCTION))
+                        {
+                            var func = FunctionDeclaration();
+                            func.IsStatic = isStatic;
+                            methods.Add(func);
+
+                        }
+                            
+                    }
+                    else
+                    {
+                        isStatic = Match(TokenType.STATIC) ? true : false;
+                        if (Check(TokenType.IDENTIFER))
+                        {
+                            Assign field = (Assign)Assignment();
+                            field.IsStatic = isStatic;
+                            fields.Add(field);
+                        }
                     }
                 }
                 Consume(TokenType.DEDENT, "Expected dedentation after class body");
             }
 
-            return new Class(methods, className, parentClass);
+            return new Class(methods, fields,className, parentClass);
         }
 
         /// <summary>
@@ -440,7 +459,7 @@ namespace HlangInterpreter.Lib
             while (Match(TokenType.DIVIDE, TokenType.MULTIPLY))
             {
                 Token opr = Previous();
-                Consume(TokenType.BY, "Expect 'or' after expression");
+                Consume(TokenType.BY, "Expect 'by' after expression");
                 Expr right = Primary();
                 expr = new Binary(expr, opr, right);
 
@@ -497,11 +516,12 @@ namespace HlangInterpreter.Lib
         private Expr Call()
         {
             Expr expr = Primary();
+            Token keyword = Previous();
             while (true)
             {
                 if (Match(TokenType.LEFT_PAREN))
                 {
-                    expr = FinishFunctionCall(expr);
+                    expr = FinishFunctionCall(expr, keyword);
                 }
                 else if (Match(TokenType.DOT))
                 {
@@ -561,6 +581,8 @@ namespace HlangInterpreter.Lib
 
             if (Match(TokenType.THIS)) return new This(Previous());
 
+            if (Match(TokenType.PARENT)) return FinishParentCall(Previous());
+
             throw new ParsingError(Peek(), "Expected an expression");
         }
         /// <summary>
@@ -568,7 +590,7 @@ namespace HlangInterpreter.Lib
         /// </summary>
         /// <param name="callee">the identifer of the function</param>
         /// <returns>A function call expression node</returns>
-        private Expr FinishFunctionCall(Expr callee)
+        private Expr FinishFunctionCall(Expr callee, Token keyword)
         {
             // get the arguments
             List<Expr> arguments = new List<Expr>();
@@ -587,7 +609,28 @@ namespace HlangInterpreter.Lib
                 } while (Match(TokenType.COMA));
             }
             Token paren = Consume(TokenType.RIGHT_PAREN, "Expected ')' after arguments");
-            return new FunctionCall(callee, paren, arguments);
+            return new FunctionCall(callee, keyword, arguments);
+        }
+        private Expr FinishParentCall(Token keyword)
+        {
+            Consume(TokenType.LEFT_PAREN, "Expected parenthesis after parent call");
+            List<Expr> arguments = new List<Expr>();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (arguments.Count >= 20)
+                    {
+                        Token token = Peek();
+                        _errorReporting.ReportError(token.Line, token.Lexeme, "Can't have more than 20 arguments");
+                    }
+                    // make sure the arguments are parsed as well
+                    // in case of for example funcCall(2 + 2)
+                    arguments.Add(Expression());
+                } while (Match(TokenType.COMA));
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expected ')' after arguments");
+            return new Parent(keyword, arguments);
         }
         /// <summary>
         /// Will synchronize the parsing after it encounters an error.

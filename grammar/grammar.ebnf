@@ -3,7 +3,7 @@ program:= <declaration>*;
 (* declaration*)
 <declaration> := functionDeclaration | <classDeclaration> | <statement>;
 <functionDeclaration> := 'define function' <function>;
-<classDeclaration> := 'define class' <identifer> ( 'extends' <identifer )? 'then' NEWLINE INDENT <function>* DEDENT;
+<classDeclaration> := 'define class' <identifer> ( 'extends' <identifer )? 'then' NEWLINE INDENT ('static'? (<function> | <assignment>)* ) DEDENT;
 
 (* statements*)
 <statement> := <expression> | <ifStatement> | <forStatement> | returnStatement | <expression> | <whileStatement> | block;
@@ -26,7 +26,7 @@ program:= <declaration>*;
 <unary> := <unaryOperators>+ <unary> | <primary>;
 <lambda> := 'lambda' <paramters>? 'then' <expression> | <primary>;
 <call> := primary ( '(' arguments ')' | '.' <identifer> )*;
-<primary> :=  <object> | "true" | "false" | "nothing" | '(' <expression> ')' | <identifer> ;
+<primary> :=  <object> | "true" | "false" | "nothing" | '(' <expression> ')' | <identifer> | '[' <primary>* ']' | 'this' | 'parent' '(' <arguments>* ')' ;
 
 
 (* Function *)

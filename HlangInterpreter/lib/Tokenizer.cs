@@ -57,6 +57,7 @@ namespace HlangInterpreter.Lib
                 {"this", TokenType.THIS },
                 {"extends", TokenType.EXTENDS },
                 {"define", TokenType.DEFINE },
+                {"parent", TokenType.PARENT },
                 {"static", TokenType.STATIC },
                 {"to", TokenType.TO },
                 {"in", TokenType.IN },

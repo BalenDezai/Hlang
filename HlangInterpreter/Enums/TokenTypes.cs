@@ -29,7 +29,7 @@
         IS, EQUAL, DEFINE, TO, LAMBDA, AND, ELSE, FALSE,
         FUNCTION, FOR, EACH, IF, NOTHING, OR, IN, THIS,
         PRINT, RETURN, TRUE, WHILE, THEN, BREAK, CLASS,
-        EXTENDS, STATIC,
+        EXTENDS, STATIC, PARENT,
 
         // end of file
         EOF

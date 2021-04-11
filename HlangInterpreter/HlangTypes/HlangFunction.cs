@@ -1,4 +1,5 @@
 ﻿using HlangInterpreter.HelperInterfaces;
+using HlangInterpreter.HlangTypes.HlangClassHelpers;
 using HlangInterpreter.Lib;
 using HlangInterpreter.Statements;
 using System.Collections.Generic;

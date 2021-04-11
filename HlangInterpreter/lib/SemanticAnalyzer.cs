@@ -2,6 +2,8 @@
 using HlangInterpreter.Errors;
 using HlangInterpreter.Expressions;
 using HlangInterpreter.HelperInterfaces;
+using HlangInterpreter.HlangTypes;
+using HlangInterpreter.HlangTypes.HlangClassHelpers;
 using HlangInterpreter.Statements;
 using System;
 using System.Collections.Generic;
@@ -16,6 +18,7 @@ namespace HlangInterpreter.Lib
     public class SemanticAnalyzer : IExpressionVisitor<object>, IStatementVisitor<object>
     {
         private readonly Stack<Dictionary<string, object>> _scopes;
+        private Environment _env;
         private FunctionType _currentFuncType;
         private readonly Stack<CallingBody> _callingBodyStack;
 
@@ -23,6 +26,7 @@ namespace HlangInterpreter.Lib
         {
             _callingBodyStack = new Stack<CallingBody>();
             _callingBodyStack.Push(CallingBody.NONE);
+            _env = new Environment();
             _scopes = new Stack<Dictionary<string, object>>();
             _scopes.Push(new Dictionary<string, object>());
             _currentFuncType = FunctionType.NONE;
@@ -36,9 +40,9 @@ namespace HlangInterpreter.Lib
             }
         }
 
-        private void Resolve(Statement statement)
+        private object Resolve(Statement statement)
         {
-            statement.Accept(this);
+            return statement.Accept(this);
         }
 
         private object Resolve(Expr expression)
@@ -74,7 +78,7 @@ namespace HlangInterpreter.Lib
             {
                 return null;
             }
-            throw new Exception("NOT IN WHILE OR FOR EACH");
+            throw new SemanticError(statement.Keyword, "NOT IN WHILE OR FOR EACH");
         }
 
         public object VisitExpressionStatement(Expression statement)
@@ -95,6 +99,16 @@ namespace HlangInterpreter.Lib
 
         public object VisitFunctionCallExpr(FunctionCall expr)
         {
+            var x = Resolve(expr.Callee);
+            if (x != null && x is ICallable)
+            {
+                int expectedArguments = ((ICallable)x).ArgumentLength;
+                if (expectedArguments != expr.Arguments.Count)
+                {
+                    throw new SemanticError(expr.Keyword, $"Expected {expectedArguments} arguments but got {expr.Arguments.Count}");
+                }
+            }
+            
             Resolve(expr.Callee);
             foreach (var argument in expr.Arguments)
             {
@@ -105,7 +119,7 @@ namespace HlangInterpreter.Lib
 
         public object visitFunctionStatement(Function statement)
         {
-            Define(statement.Name, statement);
+            Define(statement.Name, new HlangFunction(statement, new Environment()));
             ResolveFunction(statement, FunctionType.FUNCITON, CallingBody.FUNCTION);
             return null;
         }
@@ -184,18 +198,7 @@ namespace HlangInterpreter.Lib
 
         public object VisitVariableExpr(Variable expr)
         {
-            if (!_scopes.Peek().ContainsKey(expr.Name.Lexeme))
-            {
-                return GetValue(expr.Name);
-            }
-            foreach (var item in _scopes)
-            {
-                if (item.ContainsKey(expr.Name.Lexeme))
-                {
-                    return null;
-                }
-            }
-            throw new Exception();
+            return GetValue(expr.Name);
         }
 
         public object VisitWhileStatement(While statement)
@@ -209,44 +212,31 @@ namespace HlangInterpreter.Lib
 
         private void Define(Token name, object value)
         {
-            if (_scopes.Count == 0) return;
-            if (!_scopes.Peek().ContainsKey(name.Lexeme))
-            {
-                _scopes.Peek().Add(name.Lexeme, value);
-            }
-            else
-            {
-                _scopes.Peek()[name.Lexeme] = value;
-            }
+            _env.Add(name.Lexeme, value);
         }
 
         private object GetValue(Token name)
         {
-            if (_scopes.Peek().ContainsKey(name.Lexeme))
-            {
-                return _scopes.Peek()[name.Lexeme];
-            }
-            return null;
+            return _env.GetValue(name);
         }
 
         private void BeginSCope()
         {
-            _scopes.Push(new Dictionary<string, object>());
+            _env = new Environment(_env);
         }
 
         private void EndScope()
         {
-            _scopes.Pop();
+            _env = _env.Parent;
         }
 
         private void ResolveFunction(Function statement, FunctionType type, CallingBody callingBody)
         {
             if (type ==  FunctionType.INIT && _callingBodyStack.Peek() == CallingBody.SUBCLASS)
             {
+                
                 Expr first = ((Expression)statement.Body.First()).Expr;
-                if (!(first is FunctionCall)) throw new SemanticError(statement.Name, "First expression in an initializer must be a inherited initializer call");
-                Variable firstCallee = ((Variable)((FunctionCall)first).Callee);
-                if (firstCallee.Name.Lexeme != "parent") throw new SemanticError(firstCallee.Name, "First expression in an initializer must be a inherited initializer call");
+                if (!(first is Parent)) throw new SemanticError(statement.Name, "First expression in an initializer must be a inherited initializer call");
             }
             FunctionType enclosing = _currentFuncType;
             _callingBodyStack.Push(callingBody);
@@ -254,7 +244,7 @@ namespace HlangInterpreter.Lib
             BeginSCope();
             foreach (var parameter in statement.Paramters)
             {
-                Define(parameter, true);
+                Define(parameter, parameter.Literal);
             }
             Analyze(statement.Body);
             EndScope();
@@ -265,6 +255,10 @@ namespace HlangInterpreter.Lib
         public object VisitClassSTatement(Class statement)
         {
             _callingBodyStack.Push(CallingBody.CLASS);
+            HlangClassDeclaration parentClass = null;
+            var newClass = new HlangClassDeclaration(statement.Name.Lexeme);
+            BeginSCope();
+
             if (statement.ParentClass != null)
             {
 
@@ -273,19 +267,37 @@ namespace HlangInterpreter.Lib
                     throw new SemanticError(statement.Name, "Class can't inherit from itself");
                 }
                 _callingBodyStack.Push(CallingBody.SUBCLASS);
-                Resolve(statement.ParentClass);
+                parentClass = (HlangClassDeclaration)Resolve(statement.ParentClass);
+                _env.Add("parent", parentClass);
             }
 
-            if (statement.ParentClass != null)
+
+            foreach (Assign assignment in statement.Fields)
             {
-                BeginSCope();
-                _scopes.Peek().Add("parent", statement.ParentClass);
+                if (assignment.IsStatic)
+                {
+                    _env.Add(assignment.Name.Lexeme, Resolve(assignment.Value));
+                }
+                else
+                {
+                    newClass.Fields.Add(assignment.Name.Lexeme, Resolve(assignment.Value));
+
+                }
             }
 
-            BeginSCope();
-            _scopes.Peek().Add("this", statement);
             foreach (Function method in statement.Methods)
             {
+                if (method.IsStatic)
+                {
+                    var staticFunc = new HlangFunction(method, newClass.ClassEnv);
+                    _env.Add(method.Name.Lexeme, staticFunc);
+                }
+                else
+                {
+                    var func = new HlangFunction(method, newClass.ClassEnv);
+                    newClass.Methods.Add(method.Name.Lexeme, func);
+
+                }
                 if (method.Name.Lexeme == statement.Name.Lexeme)
                 {
                     ResolveFunction(method, FunctionType.INIT, CallingBody.FUNCTION);
@@ -296,13 +308,11 @@ namespace HlangInterpreter.Lib
                 }
             }
 
-            if (statement.ParentClass != null)
-            {
-                EndScope();
-            }
-
             EndScope();
             _callingBodyStack.Pop();
+            newClass.ParentClass = parentClass;
+            newClass.ClassEnv = _env;
+            Define(statement.Name, newClass);
             return null;
         }
 
@@ -326,6 +336,26 @@ namespace HlangInterpreter.Lib
                 return null;
             }
             throw new SemanticError(expr.Keyword, "'this' must be used inside of a class");
+        }
+
+        public object VisitParentExpr(Parent expr)
+        {
+            var parent = (HlangClassDeclaration)GetValue(expr.Keyword);
+
+            if (parent != null && parent is ICallable)
+            {
+                int expectedArguments = ((ICallable)parent).ArgumentLength;
+                if (expectedArguments != expr.Arguments.Count)
+                {
+                    throw new SemanticError(expr.Keyword, $"Expected {expectedArguments} arguments but got {expr.Arguments.Count}");
+                }
+            }
+
+            foreach (Expr argument in expr.Arguments)
+            {
+                Resolve(argument);
+            }
+            return null;
         }
     }
 }

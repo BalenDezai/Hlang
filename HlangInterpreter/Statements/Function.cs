@@ -21,12 +21,13 @@ namespace HlangInterpreter.Statements
         /// Function body to execute
         /// </summary>
         public List<Statement> Body { get; set; }
-
-        public Function(Token name, List<Token> paramters, List<Statement> body)
+        public bool IsStatic { get; set; }
+        public Function(Token name, List<Token> paramters, List<Statement> body, bool isStatic = false)
         {
             Name = name;
             Paramters = paramters;
             Body = body;
+            IsStatic = isStatic;
         }
         public override T Accept<T>(IStatementVisitor<T> visitor)
         {

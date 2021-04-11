@@ -10,12 +10,14 @@ namespace HlangInterpreter.Statements
         public List<Function> Methods { get; set; }
         public Token Name { get; set; }
         public Variable ParentClass { get; set; }
+        public List<Assign> Fields { get; set; }
 
-        public Class(List<Function> methods, Token name, Variable parentClass)
+        public Class(List<Function> methods, List<Assign> fields, Token name, Variable parentClass)
         {
             Methods = methods;
             Name = name;
             ParentClass = parentClass;
+            Fields = fields;
         }
 
         public override T Accept<T>(IStatementVisitor<T> visitor)

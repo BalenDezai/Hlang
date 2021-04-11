@@ -10,11 +10,13 @@ namespace HlangInterpreter.Expressions
     {
         public Token Name { get; set; }
         public Expr Value { get; set; }
+        public bool IsStatic { get; set; }
 
-        public Assign(Token name, Expr value)
+        public Assign(Token name, Expr value, bool isStatic = false)
         {
             Name = name;
             Value = value;
+            IsStatic = isStatic;
         }
 
         public override T Accept<T>(IExpressionVisitor<T> visitor)

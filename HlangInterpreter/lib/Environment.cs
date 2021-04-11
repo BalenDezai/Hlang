@@ -58,7 +58,7 @@ namespace HlangInterpreter.Lib
                 return Values[name.Lexeme];
             }
             // recursively look through parent environments to find the variable
-            if (Parent != null) return Parent.GetValue(name);
+            if (Parent != null)  return Parent.GetValue(name);
 
             throw new RuntimeError(name, $"Undefined variable '{name.Lexeme}'");
         }

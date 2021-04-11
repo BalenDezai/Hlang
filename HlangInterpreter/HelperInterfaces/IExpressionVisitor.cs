@@ -21,5 +21,6 @@ namespace HlangInterpreter.HelperInterfaces
         T VisitGetPropertyExpr(GetProperty expr);
         T VisitSetPropertyExpr(SetProperty expr);
         T VisitThisExpr(This expr);
+        T VisitParentExpr(Parent expr);
     }
 }
