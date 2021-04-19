@@ -9,15 +9,21 @@ namespace HlangInterpreter.HlangTypes.HlangClassHelpers
     {
         private int _argumentLength;
         public string Name { get; set; }
-        public HlangClass ParentClass { get; set; }
+        public Dictionary<string, ClassField> EnvTracker { get; set; } = new Dictionary<string, ClassField>();
+        public HlangClassDeclaration ParentClass { get; set; }
        
         public int ArgumentLength
         {
             get
             {
-                HlangFunction init = GetMethod(Name);
-                if (init == null) return _argumentLength;
-                return init.ArgumentLength;
+                if (Methods.TryGetValue(Name, out HlangFunction init))
+                {
+                    return init.ArgumentLength;
+                }
+                else
+                {
+                    return _argumentLength;
+                }
             }
             set
             {
@@ -29,7 +35,7 @@ namespace HlangInterpreter.HlangTypes.HlangClassHelpers
         {
             Name = name;
         }
-        public HlangClassDeclaration(string name, HlangClass parentClass)
+        public HlangClassDeclaration(string name, HlangClassDeclaration parentClass)
         {
             Name = name;
             ParentClass = parentClass;
@@ -47,23 +53,21 @@ namespace HlangInterpreter.HlangTypes.HlangClassHelpers
                 Fields = Fields,
                 Methods = Methods
             };
-            HlangFunction init = GetMethod(Name);
-            if (init != null)
+            if (Methods.TryGetValue(Name, out HlangFunction init))
             {
                 init.Bind(instance).Call(interpreter, arguments);
             }
-
             return instance;
         }
 
         public override object Get(Token name)
         {
-            if (ClassEnv.Values.ContainsKey(name.Lexeme))
+            if (EnvTracker.ContainsKey(name.Lexeme))
             {
+                var value = EnvTracker[name.Lexeme];
+                if (value.IsPrivate) throw new RuntimeError(name, $"'{name.Lexeme}' is inaccessible due to it's protection level");
                 return ClassEnv.Values[name.Lexeme];
             }
-            HlangFunction method = GetMethod(name.Lexeme);
-            if (method != null) return method;
 
             if (ParentClass != null) return ParentClass.Get(name);
 
@@ -72,29 +76,23 @@ namespace HlangInterpreter.HlangTypes.HlangClassHelpers
 
         public override void Set(Token name, object value)
         {
-            if (ClassEnv.Values.ContainsKey(name.Lexeme))
+            if (EnvTracker.ContainsKey(name.Lexeme))
             {
+                var val = EnvTracker[name.Lexeme];
+                if (val.IsPrivate) throw new RuntimeError(name, $"'{name.Lexeme}' is inaccessible due to it's protection level");
                 ClassEnv.Values[name.Lexeme] = value;
                 return;
             }
             else if (ParentClass != null)
             {
-                ParentClass.Set(name, value);
+                Set(name, value);
                 return;
             }
             else
             {
-                throw new RuntimeError(name, $"Can't set undefined static property '{name.Lexeme}'");
+                throw new RuntimeError(name, $"Can't set proeprty on a class declaration'{name.Lexeme}'");
             }
         }
 
-        public override HlangFunction GetMethod(string name)
-        {
-            if (Methods.ContainsKey(name))
-            {
-                return Methods[name];
-            }
-            return null;
-        }
     }
 }

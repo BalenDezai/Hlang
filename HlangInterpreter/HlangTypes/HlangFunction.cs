@@ -15,12 +15,14 @@ namespace HlangInterpreter.HlangTypes
         public int ArgumentLength { get; set; }
         public Environment _closure;
         public Function _funcDeclaration;
+        public bool IsPrivate { get; set; }
 
-        public HlangFunction(Function funcDeclaration, Environment closure)
+        public HlangFunction(Function funcDeclaration, Environment closure, bool isPrivate = false)
         {
             _closure = closure;
             _funcDeclaration = funcDeclaration;
             ArgumentLength = funcDeclaration.Paramters.Count;
+            IsPrivate = isPrivate;
         }
 
         /// <summary>

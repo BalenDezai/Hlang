@@ -503,34 +503,42 @@ namespace HlangInterpreter.Lib
                 }
                 newClass.ClassEnv.Add("parent", parentClass);
             }
-          
+
+            newClass.ClassEnv.Add(newClass.Name, newClass);
+
             foreach (Function method in statement.Methods)
             {
+                HlangFunction func = new HlangFunction(method, newClass.ClassEnv, method.IsPrivate);
                 if (method.IsStatic)
                 {
-                    HlangFunction staticFunc = new HlangFunction(method, newClass.ClassEnv);
-                    newClass.ClassEnv.Add(method.Name.Lexeme, staticFunc);
+                    newClass.ClassEnv.Add(method.Name.Lexeme, func);
+                    newClass.EnvTracker.Add(method.Name.Lexeme, new ClassField(method.Name.Lexeme, func, method.IsStatic, method.IsPrivate));
                 }
                 else
                 {
-                    HlangFunction func = new HlangFunction(method, newClass.ClassEnv);
                     newClass.Methods.Add(method.Name.Lexeme, func);
                 }
             }
 
+
             foreach (Assign assignment in statement.Fields)
             {
+                var name = assignment.Name.Lexeme;
+                var value = Evaluate(assignment.Value);
                 if (assignment.IsStatic)
                 {
-                    newClass.ClassEnv.Add(assignment.Name.Lexeme, Evaluate(assignment.Value));
+                    newClass.ClassEnv.Add(name, value);
+                    newClass.EnvTracker.Add(name, new ClassField(name, value, assignment.IsStatic, assignment.IsPrivate));
                 }
                 else
                 {
-                    newClass.Fields.Add(assignment.Name.Lexeme, Evaluate(assignment.Value));
+                    newClass.Fields.Add(name, new ClassField(name, value, assignment.IsStatic, assignment.IsPrivate));
                 }
             }
 
+
             newClass.ParentClass = parentClass;
+            
             Environment.Add(statement.Name.Lexeme, newClass);
             return null;
         }
@@ -540,7 +548,8 @@ namespace HlangInterpreter.Lib
             object obj = Evaluate(expr.Object);
             if (obj is HlangClass)
             {
-                return ((HlangClass)obj).Get(expr.Name);
+                var foundClass = (HlangClass)obj;
+                return foundClass.Get(expr.Name);
             }
             throw new RuntimeError(expr.Name, "Object is not a class and does not have a property");
         }
@@ -571,9 +580,9 @@ namespace HlangInterpreter.Lib
             {
                 arguments.Add(Evaluate(argument));
             }
-            var initiatlizedFunc = parent.Call(this, arguments);
+            var initiatlizedFunc = (HlangClassInstance)parent.Call(this, arguments);
             var instance = (HlangClassInstance)Environment.Parent.Values["this"];
-            instance.ParentClass = (HlangClassInstance)initiatlizedFunc;
+            instance.ParentClass = initiatlizedFunc;
             return null;
         }
     }

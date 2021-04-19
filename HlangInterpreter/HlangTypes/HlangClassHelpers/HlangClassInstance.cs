@@ -17,9 +17,11 @@ namespace HlangInterpreter.HlangTypes.HlangClassHelpers
         {
             if (Fields.ContainsKey(name.Lexeme))
             {
-                return Fields[name.Lexeme];
+                var foundField = Fields[name.Lexeme];
+                if (foundField.IsPrivate) throw new RuntimeError(name, $"'{name.Lexeme}' is inaccessible due to it's protection level");
+                return foundField.Value;
             }
-            HlangFunction method = GetMethod(name.Lexeme);
+            HlangFunction method = GetMethod(name);
             if (method != null) return method.Bind(this);
 
             if (ParentClass != null) return ParentClass.Get(name);
@@ -27,37 +29,42 @@ namespace HlangInterpreter.HlangTypes.HlangClassHelpers
             throw new RuntimeError(name, $"Can't get undefined property '{name.Lexeme}'");
         }
 
+
         public override void Set(Token name, object value)
         {
             if (Fields.ContainsKey(name.Lexeme))
             {
-                Fields[name.Lexeme] = value;
+                if (Fields[name.Lexeme].IsPrivate) throw new RuntimeError(name, $"'{name.Lexeme}' is inaccessible due to it's protection level");
+                Fields[name.Lexeme].Value = value;
                 return;
             }
-            else if (ParentClass != null)
+            else if (ParentClass != null && ParentClass.SetParent(name, value))
             {
-                ParentClass.Set(name, value);
                 return;
             }
             else
             {
-                Fields.Add(name.Lexeme, value);
-                return;
+                Fields.Add(name.Lexeme, new ClassField(name.Lexeme, value));
             }
 
         }
 
-        public override HlangFunction GetMethod(string name)
+        public bool SetParent(Token name, object value)
         {
-            if (Methods.ContainsKey(name))
+            if (Fields.ContainsKey(name.Lexeme))
             {
-                if (Methods[name] is HlangFunction) return Methods[name];
+                if (Fields[name.Lexeme].IsPrivate) throw new RuntimeError(name, $"'{name.Lexeme}' is inaccessible due to it's protection level");
+                Fields[name.Lexeme].Value = value;
+                return true;
             }
             else if (ParentClass != null)
             {
-                return ParentClass.GetMethod(name);
+                return ParentClass.SetParent(name, value);
             }
-            return null;
+            else
+            {
+                return false;
+            }
         }
 
         public override string ToString()

@@ -47,7 +47,7 @@ namespace HlangInterpreter.Lib
             {
                 if (Match(TokenType.DEFINE))
                 {
-
+                    if (Match(TokenType.STATIC)) throw new SyntaxError(Previous().Line, "Can only use 'static' in a class");
                     if (Match(TokenType.FUNCTION)) return FunctionDeclaration();
                     if (Match(TokenType.CLASS)) return ClassDeclaration();
                 }
@@ -76,33 +76,30 @@ namespace HlangInterpreter.Lib
             List<Function> methods = new List<Function>();
             List<Assign> fields = new List<Assign>();
             bool isStatic = false;
+            bool isPrivate = false;
             if (classHasBody)
             {
                 Consume(TokenType.INDENT, "");
                 while (!Check(TokenType.DEDENT) && !IsAtEnd())
                 {
-                    if (Match(TokenType.DEFINE))
-                    {
-                        isStatic = Match(TokenType.STATIC) ? true : false;
-                        if (Match(TokenType.FUNCTION))
-                        {
-                            var func = FunctionDeclaration();
-                            func.IsStatic = isStatic;
-                            methods.Add(func);
+                    isPrivate = Match(TokenType.PRIVATE);
+                    isStatic = Match(TokenType.STATIC);
 
-                        }
-                            
+                    if (Match(TokenType.FUNCTION))
+                    {
+                        Function func = FunctionDeclaration();
+                        func.IsStatic = isStatic;
+                        func.IsPrivate = isPrivate;
+                        methods.Add(func);
                     }
                     else
                     {
-                        isStatic = Match(TokenType.STATIC) ? true : false;
-                        if (Check(TokenType.IDENTIFER))
-                        {
-                            Assign field = (Assign)Assignment();
-                            field.IsStatic = isStatic;
-                            fields.Add(field);
-                        }
+                        Assign field = (Assign)Assignment();
+                        field.IsStatic = isStatic;
+                        field.IsPrivate = isPrivate;
+                        fields.Add(field);
                     }
+
                 }
                 Consume(TokenType.DEDENT, "Expected dedentation after class body");
             }

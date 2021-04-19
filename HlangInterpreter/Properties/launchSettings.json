@@ -2,7 +2,7 @@
   "profiles": {
     "HlangInterpreter": {
       "commandName": "Project",
-      "commandLineArgs": "HlangTest.HL",
+      "commandLineArgs": "HlangClassTest.HL",
       "workingDirectory": "E:\\TestProgrammeriVisualStudio\\C#\\C# Projects\\Hlang\\HlangInterpreter"
     }
   }

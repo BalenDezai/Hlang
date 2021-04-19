@@ -258,7 +258,7 @@ namespace HlangInterpreter.Lib
             HlangClassDeclaration parentClass = null;
             var newClass = new HlangClassDeclaration(statement.Name.Lexeme);
             BeginSCope();
-
+            
             if (statement.ParentClass != null)
             {
 
@@ -271,30 +271,33 @@ namespace HlangInterpreter.Lib
                 _env.Add("parent", parentClass);
             }
 
-
+            _env.Add(newClass.Name, newClass);
             foreach (Assign assignment in statement.Fields)
             {
+                var name = assignment.Name.Lexeme;
+                var value = Resolve(assignment.Value);
                 if (assignment.IsStatic)
                 {
-                    _env.Add(assignment.Name.Lexeme, Resolve(assignment.Value));
+                    _env.Add(name, value);
+                    newClass.EnvTracker.Add(name, new ClassField(name, value, assignment.IsStatic, assignment.IsPrivate));
                 }
                 else
                 {
-                    newClass.Fields.Add(assignment.Name.Lexeme, Resolve(assignment.Value));
+                    newClass.Fields.Add(assignment.Name.Lexeme, new ClassField(assignment.Name.Lexeme, Resolve(assignment.Value)));
 
                 }
             }
 
             foreach (Function method in statement.Methods)
             {
+                var func = new HlangFunction(method, newClass.ClassEnv);
                 if (method.IsStatic)
                 {
-                    var staticFunc = new HlangFunction(method, newClass.ClassEnv);
-                    _env.Add(method.Name.Lexeme, staticFunc);
+                    _env.Add(method.Name.Lexeme, func);
+                    newClass.EnvTracker.Add(method.Name.Lexeme, new ClassField(method.Name.Lexeme, func));
                 }
                 else
                 {
-                    var func = new HlangFunction(method, newClass.ClassEnv);
                     newClass.Methods.Add(method.Name.Lexeme, func);
 
                 }
@@ -307,7 +310,6 @@ namespace HlangInterpreter.Lib
                     ResolveFunction(method, FunctionType.METHOD, CallingBody.FUNCTION);
                 }
             }
-
             EndScope();
             _callingBodyStack.Pop();
             newClass.ParentClass = parentClass;

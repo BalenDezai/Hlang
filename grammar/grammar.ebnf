@@ -3,7 +3,7 @@ program:= <declaration>*;
 (* declaration*)
 <declaration> := functionDeclaration | <classDeclaration> | <statement>;
 <functionDeclaration> := 'define function' <function>;
-<classDeclaration> := 'define class' <identifer> ( 'extends' <identifer )? 'then' NEWLINE INDENT ('static'? (<function> | <assignment>)* ) DEDENT;
+<classDeclaration> := 'define class' <identifer> ( 'extends' <identifer )? 'then' NEWLINE INDENT ('static'? ( ( 'function' <function> ) | <expression>) )* DEDENT;
 
 (* statements*)
 <statement> := <expression> | <ifStatement> | <forStatement> | returnStatement | <expression> | <whileStatement> | block;
