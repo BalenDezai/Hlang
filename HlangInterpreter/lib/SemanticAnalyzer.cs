@@ -7,6 +7,7 @@ using HlangInterpreter.HlangTypes.HlangClassHelpers;
 using HlangInterpreter.Statements;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace HlangInterpreter.Lib
@@ -52,8 +53,9 @@ namespace HlangInterpreter.Lib
 
         public object VisitAssignExpr(Assign expr)
         {
-            var value = Resolve(expr.Value);
-            Define(expr.Name, value);
+            Resolve(expr.Value);
+            //var value = Resolve(expr.Value);
+            //Define(expr.Name, value);
             return null;
         }
 
@@ -198,7 +200,8 @@ namespace HlangInterpreter.Lib
 
         public object VisitVariableExpr(Variable expr)
         {
-            return GetValue(expr.Name);
+            //return GetValue(expr.Name);
+            return null;
         }
 
         public object VisitWhileStatement(While statement)
@@ -272,35 +275,9 @@ namespace HlangInterpreter.Lib
             }
 
             _env.Add(newClass.Name, newClass);
-            foreach (Assign assignment in statement.Fields)
-            {
-                var name = assignment.Name.Lexeme;
-                var value = Resolve(assignment.Value);
-                if (assignment.IsStatic)
-                {
-                    _env.Add(name, value);
-                    newClass.EnvTracker.Add(name, new ClassField(name, value, assignment.IsStatic, assignment.IsPrivate));
-                }
-                else
-                {
-                    newClass.Fields.Add(assignment.Name.Lexeme, new ClassField(assignment.Name.Lexeme, Resolve(assignment.Value)));
-
-                }
-            }
 
             foreach (Function method in statement.Methods)
             {
-                var func = new HlangFunction(method, newClass.ClassEnv);
-                if (method.IsStatic)
-                {
-                    _env.Add(method.Name.Lexeme, func);
-                    newClass.EnvTracker.Add(method.Name.Lexeme, new ClassField(method.Name.Lexeme, func));
-                }
-                else
-                {
-                    newClass.Methods.Add(method.Name.Lexeme, func);
-
-                }
                 if (method.Name.Lexeme == statement.Name.Lexeme)
                 {
                     ResolveFunction(method, FunctionType.INIT, CallingBody.FUNCTION);
@@ -356,6 +333,25 @@ namespace HlangInterpreter.Lib
             foreach (Expr argument in expr.Arguments)
             {
                 Resolve(argument);
+            }
+            return null;
+        }
+
+        public object VisitExportStatement(Export export)
+        {
+            foreach (var vars in export.VarsToExport)
+            {
+                Resolve(vars);
+            }
+            return null;
+        }
+
+        public object VisitImportStatement(Import statement)
+        {
+            Resolve(statement.FileName);
+            foreach (var expression in statement.Identifiers)
+            {
+                Resolve(expression);
             }
             return null;
         }

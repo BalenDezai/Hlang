@@ -31,6 +31,9 @@
         PRINT, RETURN, TRUE, WHILE, THEN, BREAK, CLASS,
         EXTENDS, STATIC, PARENT, PRIVATE,
 
+        // import/export
+        IMPORT, EXPORT, FROM,
+
         // end of file
         EOF
     }

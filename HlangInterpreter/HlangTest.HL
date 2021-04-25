@@ -1,4 +1,4 @@
-﻿/*age is 24
+﻿age is 24
 name is "cas"
 if name is equal to "cas" then
   print(true)
@@ -123,7 +123,7 @@ print(type of true)
 print(type of "hey")
 print(type of 5.5)
 print(type of [])
-print(type of doesNameExist)*/
+print(type of doesNameExist)
 
 define class Person then
   children is 0

@@ -1,0 +1,3 @@
+﻿import Person from "./HlangImportTest2.HL"
+
+newP is Person(45, "test")

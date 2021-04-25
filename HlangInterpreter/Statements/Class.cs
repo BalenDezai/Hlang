@@ -8,7 +8,6 @@ namespace HlangInterpreter.Statements
     public class Class : Statement
     {
         public List<Function> Methods { get; set; }
-        public Token Name { get; set; }
         public Variable ParentClass { get; set; }
         public List<Assign> Fields { get; set; }
 

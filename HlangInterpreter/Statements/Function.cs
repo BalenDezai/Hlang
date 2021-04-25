@@ -12,7 +12,6 @@ namespace HlangInterpreter.Statements
         /// <summary>
         /// Function identifer
         /// </summary>
-        public Token Name { get; set; }
         /// <summary>
         /// Function paramters
         /// </summary>

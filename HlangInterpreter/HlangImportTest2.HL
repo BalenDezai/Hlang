@@ -1,0 +1,12 @@
+﻿define class Person then
+  children is 0
+  lovestwo is "vanilla"
+  private static monkey is true
+  static function sayHello() then
+    print("hello")
+  function Person(age, name) then
+    this.age is age
+    this.name is name
+  function printPerson() then
+    print("my name is " plus this.name plus " and I'm " plus this.age plus " years old")
+export Person

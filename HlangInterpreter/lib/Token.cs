@@ -27,6 +27,10 @@ namespace HlangInterpreter.Lib
             Line = line;
             Type = type;
         }
+        public Token()
+        {
+
+        }
 
         public override string ToString()
         {

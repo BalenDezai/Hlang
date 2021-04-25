@@ -8,7 +8,6 @@ namespace HlangInterpreter.Expressions
     /// </summary>
     public class Variable : Expr
     {
-        public Token Name { get; set; }
         public Variable(Token name)
         {
             Name = name;

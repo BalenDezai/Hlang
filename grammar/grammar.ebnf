@@ -3,10 +3,12 @@ program:= <declaration>*;
 (* declaration*)
 <declaration> := functionDeclaration | <classDeclaration> | <statement>;
 <functionDeclaration> := 'define function' <function>;
-<classDeclaration> := 'define class' <identifer> ( 'extends' <identifer )? 'then' NEWLINE INDENT ('static'? ( ( 'function' <function> ) | <expression>) )* DEDENT;
+<classDeclaration> := 'define class' <identifier> ( 'extends' <identifier )? 'then' NEWLINE INDENT ('static'? ( ( 'function' <function> ) | <expression>) )* DEDENT;
 
 (* statements*)
-<statement> := <expression> | <ifStatement> | <forStatement> | returnStatement | <expression> | <whileStatement> | block;
+<statement> := <expression> | <ifStatement> | <forStatement> | returnStatement | <expression> | <whileStatement> | block | import | export;
+<import> := 'import' ( (<identifier>)+ 'from')? <identifier> '.hl';
+<export> := 'export' <identifier (',' <identifier>)* >;
 <while> := 'while' <expression> 'then' <block>;
 <ifStatement> := 'if' <expression> 'then' <block>  ('else then' statement)?;
 <forStatement> := 'for' <identifier> 'in' <list> <block> ;
@@ -16,7 +18,7 @@ program:= <declaration>*;
 
 (* expressions*)
 <expression> := <assignment>;
-<assignment> := ( <call> '.' )? <identifer> 'is' <assignment> | <logicOr>;
+<assignment> := ( <call> '.' )? <identifier> 'is' <assignment> | <logicOr>;
 <logicOr> :=  <logicAnd> ('or' <logicAnd>)*;
 <logicAnd> := <equality> ('and' equality)*;
 <equality> := <comparison> (<equalityOperators> comparison)*;
@@ -25,13 +27,13 @@ program:= <declaration>*;
 <factor> := <unary> ( <factorizationOperators> <unary> )*;
 <unary> := <unaryOperators>+ <unary> | <primary>;
 <lambda> := 'lambda' <paramters>? 'then' <expression> | <primary>;
-<call> := primary ( '(' arguments ')' | '.' <identifer> )*;
+<call> := primary ( '(' arguments ')' | '.' <identifier> )*;
 <primary> :=  <object> | "nothing" | '(' <expression> ')' | 'this' | 'parent' '(' <arguments>* ')' ;
 
 
 (* Function *)
 <function> := <identifier> '(' parameters? ')' <block>;
-<parameters := <identifer> (',' <identifier>)*;
+<parameters := <identifier> (',' <identifier>)*;
 <arguments> := expression (',' expression)*;
 
 (*types*)

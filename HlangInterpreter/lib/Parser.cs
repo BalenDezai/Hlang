@@ -149,14 +149,38 @@ namespace HlangInterpreter.Lib
         /// <returns>A statement node</returns>
         private Statement Statement()
         {
+            if (Match(TokenType.IMPORT)) return ImportStatement();
             if (Match(TokenType.PRINT)) return PrintStatement();
             if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.FOR)) return ForStatement();
             if (Check(TokenType.INDENT)) return new Block(Block());
             if (Match(TokenType.RETURN)) return ReturnStatement();
-            if (Match(TokenType.BREAK)) return new Break(Previous()); 
+            if (Match(TokenType.BREAK)) return new Break(Previous());
+            if (Match(TokenType.EXPORT)) return ExportStatement();
             return ExpressionStatement();
+        }
+
+        private Statement ImportStatement()
+        {
+            List<Expr> expr = new List<Expr>();
+            do
+            {
+                expr.Add(Primary());
+            } while (Match(TokenType.COMA));
+            Consume(TokenType.FROM, "Expected 'from' for importing");
+            return new Import(Primary(), expr);
+        }
+
+        private Statement ExportStatement()
+        {
+            var export = new Export(new List<Expr>());
+            do
+            {
+                export.VarsToExport.Add(Primary());
+
+            } while (Match(TokenType.COMA));
+            return export;
         }
 
         /// <summary>

@@ -58,5 +58,4 @@ s2 is Singleton.Instance2()
 if s1 is equal to s2 then
   print("Objects are the same instance")
 else then
-  print("Objects are not the same same")
-
+  print("Objects are not the same")

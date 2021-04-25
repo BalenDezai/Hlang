@@ -8,6 +8,7 @@ namespace HlangInterpreter.Expressions
     /// </summary>
     public abstract class Expr
     {
+        public Token Name { get; set; }
         public Expr Left { get; set; }
         public Token Operator { get; set; }
         public Expr Right { get; set; }

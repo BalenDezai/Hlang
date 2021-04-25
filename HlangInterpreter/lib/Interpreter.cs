@@ -7,6 +7,7 @@ using System;
 using HlangInterpreter.HlangTypes;
 using HlangInterpreter.Enums;
 using HlangInterpreter.HlangTypes.HlangClassHelpers;
+using System.IO;
 
 namespace HlangInterpreter.Lib
 {
@@ -583,6 +584,43 @@ namespace HlangInterpreter.Lib
             var initiatlizedFunc = (HlangClassInstance)parent.Call(this, arguments);
             var instance = (HlangClassInstance)Environment.Parent.Values["this"];
             instance.ParentClass = initiatlizedFunc;
+            return null;
+        }
+
+        public object VisitExportStatement(Export export)
+        {
+            Dictionary<string, object> exports = new Dictionary<string, object>();
+            foreach (var varToExport in export.VarsToExport)
+            {
+                exports.Add(varToExport.Name.Lexeme, Evaluate(varToExport));
+            }
+            Environment.Add("export", exports);
+            return null;
+        }
+
+        public object VisitImportStatement(Import statement)
+        {
+            string filePath = (string)Evaluate(statement.FileName);
+            string code = File.ReadAllText(filePath);
+            var p = new Parser(new ErrorReporting()).Parse(new Tokenizer(new Scanner(code)).GetTokens());
+            Environment parentEnv = Environment;
+            Environment = new Environment();
+            Interpret(p);
+            if (!Environment.Values.ContainsKey("export")) throw new RuntimeError(statement.Name, $"The module {filePath} does not export anything");
+            var exports = (Dictionary<string, object>)Environment.Values["export"];
+            foreach (var import in statement.Identifiers)
+            {
+                string importName = import.Name.Lexeme;
+                if (exports.ContainsKey(importName))
+                {
+                    parentEnv.Add(importName, exports[importName]);
+                }
+                else
+                {
+                    throw new RuntimeError(import.Name, $"The module {filePath} does not export '{importName}'");
+                }
+            }
+            Environment = parentEnv;
             return null;
         }
     }

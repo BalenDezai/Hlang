@@ -13,7 +13,9 @@ namespace HlangInterpreter.HelperInterfaces
         T VisitBlockStatement(Block statement);
         T VisitIfStatement(If statement);
         T VisitWhileStatement(While statement);
+        T VisitExportStatement(Export export);
         T VisitForeachStatement(ForEach statement);
+        T VisitImportStatement(Import statement);
         T visitFunctionStatement(Function statement);
         T VisitReturnStatement(Return statement);
         T VisitBreakStatement(Break statement);
